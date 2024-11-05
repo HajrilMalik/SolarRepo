@@ -77,7 +77,7 @@ export function HomeUser() {
       
       <div className="flex-1">
         <Navbar className="w-full px-4 py-2 shadow-lg">
-          <Typography variant="h6" color="blue-gray">My App</Typography>
+          <Typography variant="h6" color="blue-gray">Solar</Typography>
         </Navbar>
         <div className="relative h-[calc(100vh-4rem)] p-4">
           <MapContainer
