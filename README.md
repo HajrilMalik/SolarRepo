@@ -2,6 +2,9 @@
 
 Dibaca dulu ya temen temen
 
+npm run dev = ini untuk run
+oh iya sebelum ngerun, pastikan anda telah menginstal modul modul yang ada, anda hanya ketik npm install di console anda setelah itu anda bisa run
+
 silahkan buat komponen, contoh "navbar","sidebar" di folder widgets
 
 silahkan gunakan file homeUser di folder home/homeUser.jsx untuk membuat tampilan pertama 
