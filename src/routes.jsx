@@ -1,14 +1,13 @@
 import {
   HomeIcon,
-  UserCircleIcon,
   TableCellsIcon,
-  InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Tables, Notifications } from "@/pages/dashboard";
+import { Home, Tables, BMasuk } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
-
+import { HomeUser } from "@/pages/home";
+import { element } from "prop-types";
 const icon = {
   className: "w-5 h-5 text-inherit",
 };
@@ -18,28 +17,22 @@ export const routes = [
     layout: "dashboard",
     pages: [
       {
-        icon: <HomeIcon {...icon} />,
-        name: "dashboard",
+        icon: <TableCellsIcon {...icon} />,
+        name: "D",
         path: "/home",
         element: <Home />,
       },
       {
-        icon: <UserCircleIcon {...icon} />,
-        name: "profile",
-        path: "/profile",
-        element: <Profile />,
-      },
-      {
         icon: <TableCellsIcon {...icon} />,
-        name: "tables",
+        name: "Barang Keluar",
         path: "/tables",
         element: <Tables />,
       },
       {
-        icon: <InformationCircleIcon {...icon} />,
-        name: "notifications",
-        path: "/notifications",
-        element: <Notifications />,
+        icon: <TableCellsIcon {...icon} />,
+        name: "Barang Masuk",
+        path: "/asuk",
+        element: <BMasuk />,
       },
     ],
   },
@@ -58,6 +51,16 @@ export const routes = [
         name: "sign up",
         path: "/sign-up",
         element: <SignUp />,
+      },
+    ],
+  },
+  {
+    layout: "home",
+    pages: [
+      {
+        name: "Home",
+        path: "/homeUser",
+        element: <HomeUser />,
       },
     ],
   },

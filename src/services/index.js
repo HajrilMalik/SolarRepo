@@ -1,0 +1,1 @@
+export * from "@/service/produk.service.js";
