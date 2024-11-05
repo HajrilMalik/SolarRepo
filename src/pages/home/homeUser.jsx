@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ref, onValue } from "firebase/database";
+import { database } from "../../firebase";
 import {
   Navbar,
   Typography,
@@ -19,18 +21,36 @@ import {
   PresentationChartBarIcon,
   ShoppingBagIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
 } from "@heroicons/react/24/solid";
 
 export function HomeUser() {
   const [open, setOpen] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [markers, setMarkers] = useState([]); // State untuk menyimpan koordinat marker
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   // Menentukan batas wilayah Indonesia
   const indonesiaBounds = L.latLngBounds([-10, 95], [6, 141]);
+
+  useEffect(() => {
+    const mapsRef = ref(database, "Maps"); // Path ke data di Firebase
+
+    // Ambil data dari Firebase
+    onValue(mapsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Mengubah data menjadi array untuk setiap kota dengan lat dan lng
+        const markerData = Object.entries(data).map(([city, coords]) => ({
+          name: city,
+          lat: coords.lat,
+          lng: coords.lng,
+        }));
+        setMarkers(markerData); // Simpan data ke state markers
+      }
+    });
+  }, []);
 
   return (
     <div className="flex">
@@ -91,12 +111,21 @@ export function HomeUser() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
             />
-            <Marker
-              position={[-6.200000, 106.816666]}
-              eventHandlers={{
-                click: toggleSidebar,
-              }}
-            />
+            {/* Render marker untuk setiap koordinat dari Firebase */}
+            {markers.map((marker) => (
+              <Marker
+                key={marker.name}
+                position={[marker.lat, marker.lng]}
+                eventHandlers={{
+                  click: toggleSidebar,
+                }}
+              >
+                <Popup>
+                  <strong>{marker.name}</strong><br />
+                  Latitude: {marker.lat}, Longitude: {marker.lng}
+                </Popup>
+              </Marker>
+            ))}
           </MapContainer>
         </div>
       </div>
