@@ -23,12 +23,6 @@ import {
   PresentationChartBarIcon,
   ShoppingBagIcon,
   ChevronDownIcon,
-<<<<<<< HEAD
-=======
-  ChevronRightIcon,
-  Bars3Icon,
-  XMarkIcon,
->>>>>>> 2d3ef0f28dcf2952dba625dd387f1741269e6e75
 } from "@heroicons/react/24/solid";
 
 export function NavbarWithSolidBackground() {
@@ -92,12 +86,8 @@ export function NavbarWithSolidBackground() {
 
 export function HomeUser() {
   const [open, setOpen] = useState(0);
-<<<<<<< HEAD
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [markers, setMarkers] = useState([]); // State untuk menyimpan koordinat marker
-=======
-  const [selectedMarker, setSelectedMarker] = useState(null);
->>>>>>> 2d3ef0f28dcf2952dba625dd387f1741269e6e75
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const handleMarkerClick = (markerId) => setSelectedMarker(selectedMarker === markerId ? null : markerId);
@@ -105,7 +95,6 @@ export function HomeUser() {
   // Indonesia map bounds
   const indonesiaBounds = L.latLngBounds([-10, 95], [6, 141]);
 
-<<<<<<< HEAD
   useEffect(() => {
     const mapsRef = ref(database, "Maps"); // Path ke data di Firebase
 
@@ -123,47 +112,6 @@ export function HomeUser() {
       }
     });
   }, []);
-=======
-  // Sidebar content based on the selected marker
-  const renderSidebarContent = () => {
-    if (selectedMarker === 1) {
-      return (
-        <List>
-          <Accordion open={open === 1}>
-            <ListItem onClick={() => handleOpen(1)} className="cursor-pointer">
-              <AccordionHeader className="flex items-center">
-                <PresentationChartBarIcon className="h-5 w-5 mr-3" />
-                Dashboard for Marker 1
-                <ChevronDownIcon
-                  strokeWidth={2.5}
-                  className={`h-4 w-4 ml-auto transition-transform ${open === 1 ? "rotate-180" : ""}`}
-                />
-              </AccordionHeader>
-            </ListItem>
-          </Accordion>
-        </List>
-      );
-    } else if (selectedMarker === 2) {
-      return (
-        <List>
-          <Accordion open={open === 2}>
-            <ListItem onClick={() => handleOpen(2)} className="cursor-pointer">
-              <AccordionHeader className="flex items-center">
-                <ShoppingBagIcon className="h-5 w-5 mr-3" />
-                E-Commerce for Marker 2
-                <ChevronDownIcon
-                  strokeWidth={2.5}
-                  className={`h-4 w-4 ml-auto transition-transform ${open === 2 ? "rotate-180" : ""}`}
-                />
-              </AccordionHeader>
-            </ListItem>
-          </Accordion>
-        </List>
-      );
-    }
-    return null;
-  };
->>>>>>> 2d3ef0f28dcf2952dba625dd387f1741269e6e75
 
   return (
     <div className="flex">
@@ -191,7 +139,6 @@ export function HomeUser() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
             />
-<<<<<<< HEAD
             {/* Render marker untuk setiap koordinat dari Firebase */}
             {markers.map((marker) => (
               <Marker
@@ -207,20 +154,6 @@ export function HomeUser() {
                 </Popup>
               </Marker>
             ))}
-=======
-            <Marker
-              position={[-6.200000, 106.816666]}
-              eventHandlers={{
-                click: () => handleMarkerClick(1),
-              }}
-            />
-            <Marker
-              position={[-7.250445, 112.768845]}
-              eventHandlers={{
-                click: () => handleMarkerClick(2),
-              }}
-            />
->>>>>>> 2d3ef0f28dcf2952dba625dd387f1741269e6e75
           </MapContainer>
         </div>
       </div>
