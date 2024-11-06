@@ -42,6 +42,7 @@ export function HomeUser() {
     setSelectedMarker(marker);
   };
 
+  
   // data dummy
   const chartData = {
     labels: ["January", "February", "March", "April", "May", "June"],
