@@ -4,6 +4,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase";
+import { Button } from "@material-tailwind/react";
+import { Line } from "react-chartjs-2";
 import {
   Navbar,
   Typography,
@@ -23,31 +25,55 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/solid";
 
+// Import chart.js and register necessary components
+import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import Chart from 'chart.js/auto';
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
 export function HomeUser() {
   const [open, setOpen] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [markers, setMarkers] = useState([]); // State untuk menyimpan koordinat marker
+  const [markers, setMarkers] = useState([]); 
+  const [selectedMarker, setSelectedMarker] = useState(null);
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = (marker = null) => {
+    setIsSidebarOpen(!isSidebarOpen);
+    setSelectedMarker(marker);
+  };
 
-  // Menentukan batas wilayah Indonesia
+  const chartData = {
+    labels: ["January", "February", "March", "April", "May", "June"],
+    datasets: [
+      {
+        label: "Data Dummy",
+        data: [10, 20, 15, 30, 25, 35],
+        borderColor: "rgba(75,192,192,1)",
+        backgroundColor: "rgba(75,192,192,0.2)",
+        fill: true,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+  };
+
   const indonesiaBounds = L.latLngBounds([-10, 95], [6, 141]);
 
   useEffect(() => {
-    const mapsRef = ref(database, "Maps"); // Path ke data di Firebase
+    const mapsRef = ref(database, "Maps");
 
-    // Ambil data dari Firebase
     onValue(mapsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // Mengubah data menjadi array untuk setiap kota dengan lat dan lng
         const markerData = Object.entries(data).map(([city, coords]) => ({
           name: city,
           lat: coords.lat,
           lng: coords.lng,
         }));
-        setMarkers(markerData); // Simpan data ke state markers
+        setMarkers(markerData);
       }
     });
   }, []);
@@ -60,38 +86,11 @@ export function HomeUser() {
             <Typography variant="h5" color="blue-gray">
               Sidebar
             </Typography>
-            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700">X</button>
+            <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
           </div>
-          <List>
-            <Accordion open={open === 1}>
-              <ListItem onClick={() => handleOpen(1)} className="cursor-pointer">
-                <AccordionHeader className="flex items-center">
-                  <PresentationChartBarIcon className="h-5 w-5 mr-3" />
-                  Dashboard
-                  <ChevronDownIcon
-                    strokeWidth={2.5}
-                    className={`h-4 w-4 ml-auto transition-transform ${
-                      open === 1 ? "rotate-180" : ""
-                    }`}
-                  />
-                </AccordionHeader>
-              </ListItem>
-            </Accordion>
-            <Accordion open={open === 2}>
-              <ListItem onClick={() => handleOpen(2)} className="cursor-pointer">
-                <AccordionHeader className="flex items-center">
-                  <ShoppingBagIcon className="h-5 w-5 mr-3" />
-                  E-Commerce
-                  <ChevronDownIcon
-                    strokeWidth={2.5}
-                    className={`h-4 w-4 ml-auto transition-transform ${
-                      open === 2 ? "rotate-180" : ""
-                    }`}
-                  />
-                </AccordionHeader>
-              </ListItem>
-            </Accordion>
-          </List>
+          <div className="h-64">
+            <Line data={chartData} options={chartOptions} />
+          </div>
         </Card>
       )}
       
@@ -111,13 +110,12 @@ export function HomeUser() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
             />
-            {/* Render marker untuk setiap koordinat dari Firebase */}
             {markers.map((marker) => (
               <Marker
                 key={marker.name}
                 position={[marker.lat, marker.lng]}
                 eventHandlers={{
-                  click: toggleSidebar,
+                  click: () => toggleSidebar(marker),
                 }}
               >
                 <Popup>
