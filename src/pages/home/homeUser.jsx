@@ -108,7 +108,7 @@ export function HomeUser() {
         <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
           <Typography variant="h6" color="blue-gray">SolarRep</Typography>
 
-          {/* Search bar in the navbar */}
+          {/* tombol searchbar */}
           <div className="relative flex items-center">
             <Input
               type="text"
