@@ -1,40 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase";
-import { Button } from "@material-tailwind/react";
+import { Button, Input, Navbar, Typography } from "@material-tailwind/react";
+import { Card } from "@material-tailwind/react";
 import { Line } from "react-chartjs-2";
-import {
-  Navbar,
-  Typography,
-  IconButton,
-} from "@material-tailwind/react";
-import {
-  Card,
-  List,
-  ListItem,
-  Accordion,
-  AccordionHeader,
-  AccordionBody,
-} from "@material-tailwind/react";
-import {
-  PresentationChartBarIcon,
-  ShoppingBagIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/solid";
-
-// Import chart.js and register necessary components
+import { DocSearch } from '@docsearch/react';
 import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import Chart from 'chart.js/auto';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
+// Component untuk memfokuskan peta pada lokasi
+function MapFocus({ position }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.setView(position, 10);
+    }
+  }, [position, map]);
+
+  return null;
+}
+
 export function HomeUser() {
   const [open, setOpen] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [markers, setMarkers] = useState([]); 
+  const [markers, setMarkers] = useState([]);
   const [selectedMarker, setSelectedMarker] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [focusPosition, setFocusPosition] = useState(null);
+  const APP_ID = "1:499406911147:web:5970d609596a6357fc29ee";
+  const INDEX_NAME = "solar";
+  const API_KEY = "AIzaSyBFrYcwWKfN9zLepg0P3tlFNmlLP7TDSMw";
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const toggleSidebar = (marker = null) => {
@@ -42,7 +41,6 @@ export function HomeUser() {
     setSelectedMarker(marker);
   };
 
-  
   // data dummy
   const chartData = {
     labels: ["January", "February", "March", "April", "May", "June"],
@@ -80,14 +78,24 @@ export function HomeUser() {
     });
   }, []);
 
+  // Fungsi pencarian
+  const handleSearch = () => {
+    const marker = markers.find((m) => m.name.toLowerCase() === searchTerm.toLowerCase());
+    if (marker) {
+      setFocusPosition([marker.lat, marker.lng]);
+      setSelectedMarker(marker);
+      setIsSidebarOpen(true);
+    } else {
+      alert("Marker tidak ditemukan");
+    }
+  };
+
   return (
     <div className="flex">
-      {isSidebarOpen && (
+      {isSidebarOpen && selectedMarker && (
         <Card className="h-[calc(100vh-2rem)] w-64 p-4 shadow-xl shadow-blue-gray-900/5">
           <div className="mb-2 p-4 flex justify-between items-center">
-            <Typography variant="h5" color="blue-gray">
-              Sidebar
-            </Typography>
+            <Typography variant="h5" color="blue-gray">Sidebar</Typography>
             <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
           </div>
           <div className="h-64">
@@ -95,11 +103,25 @@ export function HomeUser() {
           </div>
         </Card>
       )}
-      
+
       <div className="flex-1">
-        <Navbar className="w-full px-4 py-2 shadow-lg">
+        <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
           <Typography variant="h6" color="blue-gray">SolarRep</Typography>
+
+          {/* Search bar in the navbar */}
+          <div className="relative flex items-center">
+            <Input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="focus:!border-t-gray-900 group-hover:border-2 group-hover:!border-gray-900"
+              labelProps={{ className: "hidden" }}
+            />
+            <Button onClick={handleSearch} className="ml-2">Search</Button>
+          </div>
         </Navbar>
+
         <div className="relative h-[calc(100vh-4rem)] p-4">
           <MapContainer
             center={[-2.548926, 118.0148634]}
@@ -126,6 +148,7 @@ export function HomeUser() {
                 </Popup>
               </Marker>
             ))}
+            {focusPosition && <MapFocus position={focusPosition} />}
           </MapContainer>
         </div>
       </div>
