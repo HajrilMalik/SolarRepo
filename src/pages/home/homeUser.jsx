@@ -12,7 +12,7 @@ import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, 
 import Chart from 'chart.js/auto';
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-// Component untuk memfokuskan peta pada lokasi
+// Component untuk memfokuskan peta pada lokasi tertentu
 function MapFocus({ position }) {
   const map = useMap();
   useEffect(() => {
