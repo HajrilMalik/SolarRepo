@@ -25,7 +25,7 @@ function MapFocus({ position }) {
 }
 
 const TABLE_HEAD = ["Name", "Job", "Employed", ""];
- 
+
 const TABLE_ROWS = [
   {
     name: "John Michael",
