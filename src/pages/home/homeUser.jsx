@@ -90,6 +90,11 @@ export function HomeUser() {
     }
   };
 
+  // Fungsi untuk menangani login (contoh sederhana)
+  const handleLogin = () => {
+    alert("Login clicked!");
+  };
+
   return (
     <div className="flex">
       {isSidebarOpen && selectedMarker && (
@@ -108,7 +113,7 @@ export function HomeUser() {
         <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
           <Typography variant="h6" color="blue-gray">SolarRep</Typography>
 
-          {/* tombol searchbar */}
+          {/* tombol searchbar dan login */}
           <div className="relative flex items-center">
             <Input
               type="text"
@@ -119,6 +124,7 @@ export function HomeUser() {
               labelProps={{ className: "hidden" }}
             />
             <Button onClick={handleSearch} className="ml-2">Search</Button>
+            <Button onClick={handleLogin} className="ml-4 bg-blue-500">Login</Button>
           </div>
         </Navbar>
 
