@@ -16,7 +16,7 @@ export function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/dashboard"); // Arahkan ke dashboard setelah login berhasil
     } catch (error) {
-      alert("Login gagal: " + error.message);
+      alert("Username atau Password Salah!!!");
     }
   };
 
