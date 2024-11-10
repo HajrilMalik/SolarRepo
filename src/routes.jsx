@@ -5,7 +5,7 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 import { Home, Tables, BMasuk } from "@/pages/dashboard";
-import { SignIn, SignUp } from "@/pages/auth";
+import { Login, SignUp } from "@/pages/auth";
 import { HomeUser } from "@/pages/home";
 import { element } from "prop-types";
 const icon = {
@@ -43,8 +43,8 @@ export const routes = [
       {
         icon: <ServerStackIcon {...icon} />,
         name: "sign in",
-        path: "/sign-in",
-        element: <SignIn />,
+        path: "/Login",
+        element: <Login />,
       },
       {
         icon: <RectangleStackIcon {...icon} />,

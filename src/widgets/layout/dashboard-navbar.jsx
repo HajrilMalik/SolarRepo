@@ -1,4 +1,6 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link,useNavigate } from "react-router-dom";
+import React from 'react';
+import { getAuth, signOut } from 'firebase/auth';
 import {
   Navbar,
   Typography,
@@ -28,7 +30,20 @@ export function DashboardNavbar() {
   const { fixedNavbar, openSidenav } = controller;
   const { pathname } = useLocation();
   const [layout, page] = pathname.split("/").filter((el) => el !== "");
+  const navigate = useNavigate();
+  const auth = getAuth();
 
+  //logout
+  const handleLogout = () => {
+    signOut(auth)
+      .then(() => {
+        // Redirect ke halaman login atau halaman lain setelah logout
+        navigate('/home');
+      })
+      .catch((error) => {
+        console.error("Error saat logout:", error);
+      });
+  };
   return (
     <Navbar
       color={fixedNavbar ? "white" : "transparent"}
@@ -81,17 +96,15 @@ export function DashboardNavbar() {
               </Button>
             </MenuHandler>
             <MenuList className="w-max border-0">
-              <MenuItem className="flex items-center gap-3">
-                <div>
                   <Typography
                     variant="small"
                     color="blue-gray"
                     className="mb-1 font-normal"
                   >
-                    <div>Logout</div>
+                    <Button onClick={handleLogout} color="red">
+                    Logout
+                    </Button>
                   </Typography>
-                </div>
-              </MenuItem>
             </MenuList>
           </Menu>
         </div>

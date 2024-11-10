@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -55,15 +56,14 @@ const TABLE_ROWS = [
 ];
 
 export function HomeUser() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [markers, setMarkers] = useState([]);
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusPosition, setFocusPosition] = useState(null);
-  const APP_ID = "1:499406911147:web:5970d609596a6357fc29ee";
-  const INDEX_NAME = "solar";
-  const API_KEY = "AIzaSyBFrYcwWKfN9zLepg0P3tlFNmlLP7TDSMw";
+
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const toggleSidebar = (marker = null) => {
@@ -122,7 +122,7 @@ export function HomeUser() {
 
   // Fungsi untuk menangani login (contoh sederhana)
   const handleLogin = () => {
-    alert("Login clicked!");
+    navigate("/auth/login")
   };
 
   return (
