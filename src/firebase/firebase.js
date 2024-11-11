@@ -3,7 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
 // Konfigurasi Firebase Anda
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyBFrYcwWKfN9zLepg0P3tlFNmlLP7TDSMw",
     authDomain: "solar-ce53e.firebaseapp.com",
     databaseURL: "https://solar-ce53e-default-rtdb.asia-southeast1.firebasedatabase.app",

@@ -1,3 +1,5 @@
+// src/components/HomeUser .jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
@@ -7,11 +9,11 @@ import { ref, onValue } from "firebase/database";
 import { database } from "../../firebase";
 import { Button, Input, Navbar, Typography } from "@material-tailwind/react";
 import { Card } from "@material-tailwind/react";
-import { Line } from "react-chartjs-2";
+
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'; // Impor Firebase Auth
 import { DocSearch } from '@docsearch/react';
-import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
-import Chart from 'chart.js/auto';
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+import { UsersData } from '@/components/AdminHome/AdminHome';
 
 // Component untuk memfokuskan peta pada lokasi tertentu
 function MapFocus({ position }) {
@@ -55,7 +57,7 @@ const TABLE_ROWS = [
   },
 ];
 
-export function HomeUser() {
+export function HomeUser () {
   const navigate = useNavigate();
   const [open, setOpen] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -63,7 +65,7 @@ export function HomeUser() {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [focusPosition, setFocusPosition] = useState(null);
-
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // State untuk status autentikasi
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const toggleSidebar = (marker = null) => {
@@ -71,28 +73,17 @@ export function HomeUser() {
     setSelectedMarker(marker);
   };
 
-  // data dummy
-  const chartData = {
-    labels: ["January", "February", "March", "April", "May", "June"],
-    datasets: [
-      {
-        label: "Data Dummy",
-        data: [10, 20, 15, 30, 25, 35],
-        borderColor: "rgba(75,192,192,1)",
-        backgroundColor: "rgba(75,192,192,0.2)",
-        fill: true,
-      },
-    ],
-  };
+    // data dummy
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-  };
 
   const indonesiaBounds = L.latLngBounds([-10, 95], [6, 141]);
 
   useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user); // Update status autentikasi
+    });
+
     const mapsRef = ref(database, "Maps");
 
     onValue(mapsRef, (snapshot) => {
@@ -106,9 +97,12 @@ export function HomeUser() {
         setMarkers(markerData);
       }
     });
+
+    return () => {
+      unsubscribe(); // Unsubscribe dari listener saat komponen unmount
+    };
   }, []);
 
-  // Fungsi pencarian
   const handleSearch = () => {
     const marker = markers.find((m) => m.name.toLowerCase() === searchTerm.toLowerCase());
     if (marker) {
@@ -120,9 +114,19 @@ export function HomeUser() {
     }
   };
 
-  // Fungsi untuk menangani login (contoh sederhana)
   const handleLogin = () => {
-    navigate("/auth/login")
+    navigate("/auth/login");
+  };
+
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth).then(() => {
+      // Logout berhasil
+      console.log("User  logged out");
+    }).catch((error) => {
+      // Tangani kesalahan logout
+      console.error("Logout error: ", error);
+    });
   };
 
   return (
@@ -133,9 +137,7 @@ export function HomeUser() {
             <Typography variant="h5" color="blue-gray">Sidebar</Typography>
             <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
           </div>
-          <div className="h-64">
-            <Line data={chartData} options={chartOptions} />
-          </div>
+
           <Card className="h-full w-full overflow-scroll">
       <table className="w-full min-w-max table-auto text-left">
         <thead>
@@ -192,9 +194,6 @@ export function HomeUser() {
       <div className="flex-1">
         <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
           <Typography variant="h6" color="blue-gray">SolarRep</Typography>
-          
-
-          {/* tombol searchbar dan login */}
           <div className="relative flex items-center">
             <Input
               type="text"
@@ -204,8 +203,11 @@ export function HomeUser() {
               className="focus:!border-t-gray-900 group-hover:border-2 group-hover:!border-gray-900"
               labelProps={{ className: "hidden" }}
             />
-            <Button onClick={handleSearch} className="ml-2">Search</Button>
-            <Button onClick={handleLogin} className="ml-4 bg-blue-500">Login</Button>
+            <Button onClick={handleSearch}>Search</Button>
+            {isAuthenticated ? (
+              <Button onClick={handleLogout} className="ml-2">Logout</Button>) : (
+              <Button onClick={handleLogin} className="ml-2">Login</Button>
+              )}
           </div>
         </Navbar>
 
@@ -238,9 +240,13 @@ export function HomeUser() {
             {focusPosition && <MapFocus position={focusPosition} />}
           </MapContainer>
         </div>
+
+        {/* Tampilkan UsersData hanya jika pengguna sudah login */}
+        <div className='p-4'>
+        {isAuthenticated && <UsersData />}
+        </div>
       </div>
     </div>
   );
 }
-
-export default HomeUser;
+export default HomeUser ;

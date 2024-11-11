@@ -14,7 +14,7 @@ export function Login() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/dashboard"); // Arahkan ke dashboard setelah login berhasil
+      navigate("/home"); // Arahkan ke dashboard setelah login berhasil
     } catch (error) {
       alert("Username atau Password Salah!!!");
     }
