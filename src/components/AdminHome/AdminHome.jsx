@@ -24,8 +24,7 @@ export function UsersData() {
     }, []);
 
     return (
-        <div>
-            <h1>Users Data</h1>
+        <div className='flex justify-center flex-wrap gap-3'>
             {Object.keys(data).map((srKey) => (
                 <CardDefault key={srKey} srData={data[srKey]} srKey={srKey} />
             ))}

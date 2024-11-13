@@ -12,12 +12,12 @@ import {
 
     const timestampCount = Object.keys(srData.readings || {}).length;
     return (
-<Card className="mt-6 w-96" color="light-blue">
-            <CardHeader color="blue-gray" className="relative h-56">
+        <Card className="mt-6 w-96" color="light-blue">
+            <CardBody>
+                <CardHeader color="blue-white" className="relative h-56 m-1">
                 <ChartSR readings={srData.readings} /> {/* Kirim data readings ke ChartSR */}
             </CardHeader>
-            <CardBody>
-                <Typography variant="h5" color="blue-gray" className="mb-2">
+                <Typography variant="h5" color="blue-white" className="mb-2">
                     {srKey} - Total Timestamps: {timestampCount}
                 </Typography>
                 <Typography>
@@ -25,8 +25,9 @@ import {
                 </Typography>
             </CardBody>
             <CardFooter className="pt-0">
-                <Button>EDIT</Button>
+                <Button>Add Location</Button>
             </CardFooter>
         </Card>
+
     );
   }
