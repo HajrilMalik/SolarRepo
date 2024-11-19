@@ -34,8 +34,8 @@ export function ChartSR({ readings }) {
     };
 
     return (
-        <div>
-            <Line data={chartData} options={chartOptions} />
-        </div>
+  <div className="w-full h-52">
+    <Line data={chartData} options={chartOptions} />
+  </div>
     );
 }
