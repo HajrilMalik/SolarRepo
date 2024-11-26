@@ -188,7 +188,7 @@ export function HomeUser () {
               />
               <Button onClick={handleSearch}>Cari</Button>
               {isAuthenticated ? (
-                <Button onClick={handleLogout} className="ml-2">Logout</Button>
+                <Button onClick={handleLogout} className="ml-2">Logo-ut</Button>
               ) : (
                 <Button onClick={handleLogin} className="ml-2">Login</Button>
               )}
