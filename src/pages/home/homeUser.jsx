@@ -32,6 +32,16 @@ export function HomeUser () {
   const [searchTerm, setSearchTerm] = useState('');
   const [focusPosition, setFocusPosition] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleOpen = (value) => setOpen(open === value ? 0 : value);
   const toggleSidebar = (marker = null) => {
@@ -40,7 +50,7 @@ export function HomeUser () {
 
     if (marker) {
       const auth = getAuth();
-      const user = auth.currentUser ;
+      const user = auth.currentUser;
 
       if (user) {
         const uid = user.uid;
@@ -66,7 +76,6 @@ export function HomeUser () {
         const uid = user.uid;
         const userRef = ref(database, `UsersData/${uid}`);
 
-        // Fetch user-specific markers
         onValue(userRef, (snapshot) => {
           const data = snapshot.val();
           if (data) {
@@ -89,139 +98,139 @@ export function HomeUser () {
         setIsAuthenticated(false);
       }
 
-      // Fetch all markers from UsersData (public)
       const allMarkersRef = ref(database, `UsersData`);
       onValue(allMarkersRef, (snapshot) => {
         const allData = snapshot.val();
-const allMarkerData = [];
-if (allData) {
-  Object.keys(allData).forEach((userId) => {
-    const userMarkers = allData[userId];
-    Object.keys(userMarkers).forEach((srKey) => {
-      const sr = userMarkers[srKey];
-      if (sr.Maps) {
-        allMarkerData.push({
-          name: srKey,
-          lat: parseFloat(sr.Maps.latitude),
-          lng: parseFloat(sr.Maps.longitude),
-        });
-      }
+        const allMarkerData = [];
+        if (allData) {
+          Object.keys(allData).forEach((userId) => {
+            const userMarkers = allData[userId];
+            Object.keys(userMarkers).forEach((srKey) => {
+              const sr = userMarkers[srKey];
+              if (sr.Maps) {
+                allMarkerData.push({
+                  name: srKey,
+                  lat: parseFloat(sr.Maps.latitude),
+                  lng: parseFloat(sr.Maps.longitude),
+                });
+              }
+            });
+          });
+        }
+        setMarkers((prevMarkers) => [...prevMarkers, ...allMarkerData]);
+      });
     });
-  });
-}
-          // Menggabungkan marker pengguna dengan marker publik
-          setMarkers((prevMarkers) => [...prevMarkers, ...allMarkerData]);
-        });
-      });
-  
-      return () => {
-        unsubscribe();
-      };
-    }, []);
-  
-    const handleSearch = () => {
-      const marker = markers.find((m) => m.name.toLowerCase() === searchTerm.toLowerCase());
-      if (marker) {
-        setFocusPosition([marker.lat, marker.lng]);
-        setSelectedMarker(marker);
-        setIsSidebarOpen(true);
-      } else {
-        alert("Marker tidak ditemukan");
-      }
+
+    return () => {
+      unsubscribe();
     };
-  
-    const handleLogin = () => {
-      navigate("/auth/login");
-    };
-  
-    const handleLogout = () => {
-      const auth = getAuth();
-      signOut(auth).then(() => {
-        console.log("User  logged out");
-      }).catch((error) => {
-        console.error("Logout error: ", error);
-      });
-    };
-  
-    return (
-      <>
-        <div className="flex">
-          {isSidebarOpen && selectedMarker && (
-            <Card className="h-[calc(100vh-2rem)] w-96 p-4 shadow-xl shadow-blue-gray-900/5">
-              <div className="mb-2 p-4 flex justify-between items-center">
-                <Typography variant="h5" color="blue-gray">Sidebar</Typography>
-                <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
-              </div>
-              <div>
-                <p><strong>Nama Marker:</strong> {selectedMarker.name}</p>
-                <p><strong>Latitude:</strong> {selectedMarker.lat}</p>
-                <p><strong>Longitude:</strong> {selectedMarker.lng}</p>
-              </div>
-              {selectedReadings ? (
-                <ChartSR readings={selectedReadings} />
-              ) : (
-                <Typography>Tidak ada data tersedia untuk marker ini</Typography>
-              )}
-            </Card>
-          )}
-  
-          <div className="flex-1">
-            <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
-              <Typography variant="h6" color="blue-gray">SolarRep</Typography>
-              <div className="relative flex items-center">
-                <Input
-                  type="text"
-                  placeholder="Cari"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="focus:!border-t-gray-900 group-hover:border-2 group-hover:!border-gray-900"
-                  labelProps={{ className: "hidden" }}
-                />
-                <Button onClick={handleSearch}>Cari</Button>
-                {isAuthenticated ? (
-                  <Button onClick={handleLogout} className="ml-2">Logout</Button>
-                ) : (
-                  <Button onClick={handleLogin} className="ml-2">Login</Button>
-                )}
-              </div>
-            </Navbar>
-  
-            <div className="relative h-[calc(100vh-4rem)] p-4">
-              <MapContainer
-                center={[-2.548926, 118.0148634]}
-                zoom={5}
-                scrollWheelZoom={false}
-                style={{ height: '100%', width: '100%', borderRadius: '8px' }}
-                bounds={indonesiaBounds}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {markers.map((marker) => (
-                  <Marker
-                    key={marker.name}
-                    position={[marker.lat, marker.lng]}
-                    eventHandlers={{
-                      click: () => toggleSidebar(marker),
-                    }}
-                  >
-                    <Popup>
-                      <strong>{marker.name}</strong><br />
-                      Latitude: {marker.lat}, Longitude: {marker.lng}
-                    </Popup>
-                  </Marker>
-                ))}
-                {focusPosition && <MapFocus position={focusPosition} />}
-              </MapContainer>
+  }, []);
+
+  const handleSearch = () => {
+    const marker = markers.find((m) => m.name.toLowerCase() === searchTerm.toLowerCase());
+    if (marker) {
+      setFocusPosition([marker.lat, marker.lng]);
+      setSelectedMarker(marker);
+      setIsSidebarOpen(true);
+    } else {
+      alert("Marker tidak ditemukan");
+    }
+  };
+
+  const handleLogin = () => {
+    navigate("/auth/login");
+  };
+
+  const handleLogout = () => {
+    const auth = getAuth();
+    signOut(auth).then(() => {
+      console.log("User logged out");
+    }).catch((error) => {
+      console.error("Logout error: ", error);
+    });
+  };
+
+  return (
+    <>
+      <div className={`flex ${isMobile && isSidebarOpen ? "flex-col" : ""}`}>
+        {isSidebarOpen && selectedMarker && (
+          <Card
+            className={`h-[calc(100vh-2rem)] ${isMobile ? "w-full" : "w-96"} p-4 shadow-xl shadow-blue-gray-900/5`}
+            style={isMobile ? { marginTop: '1rem' } : {}}>
+            <div className="mb-2 p-4 flex justify-between items-center">
+              <Typography variant="h5" color="blue-gray">Sidebar</Typography>
+              <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
             </div>
+            <div>
+              <p><strong>Nama Marker:</strong> {selectedMarker.name}</p>
+              <p><strong>Latitude:</strong> {selectedMarker.lat}</p>
+              <p><strong>Longitude:</strong> {selectedMarker.lng}</p>
+            </div>
+            {selectedReadings ? (
+              <ChartSR readings={selectedReadings} />
+            ) : (
+              <Typography>Tidak ada data tersedia untuk marker ini</Typography>
+            )}
+          </Card>
+        )}
+
+        <div className={`flex-1 ${isMobile && isSidebarOpen ? "order-first" : ""}`}>
+          <Navbar className="w-full px-4 py-2 shadow-lg flex items-center justify-between">
+            <Typography variant="h6" color="blue-gray">SolarRep</Typography>
+            <div className="relative flex items-center">
+              <Input
+                type="text"
+                placeholder="Cari"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="focus:!border-t-gray-900 group-hover:border-2 group-hover:!border-gray-900"
+                labelProps={{ className: "hidden" }}
+              />
+              <Button onClick={handleSearch}>Cari</Button>
+              {isAuthenticated ? (
+                <Button onClick={handleLogout} className="ml-2">Logout</Button>
+              ) : (
+                <Button onClick={handleLogin} className="ml-2">Login</Button>
+              )}
+            </div>
+          </Navbar>
+
+          <div className="relative h-[calc(100vh-4rem)] p-4">
+            <MapContainer
+              center={[-2.548926, 118.0148634]}
+              zoom={5}
+              scrollWheelZoom={false}
+              style={{ height: '100%', width: '100%', borderRadius: '8px' }}
+              bounds={indonesiaBounds}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {markers.map((marker) => (
+                <Marker
+                  key={marker.name}
+                  position={[marker.lat, marker.lng]}
+                  eventHandlers={{
+                    click: () => toggleSidebar(marker),
+                  }}
+                >
+                  <Popup>
+                    <strong>{marker.name}</strong><br />
+                    Latitude: {marker.lat}, Longitude: {marker.lng}
+                  </Popup>
+                </Marker>
+              ))}
+              {focusPosition && <MapFocus position={focusPosition} />}
+            </MapContainer>
           </div>
         </div>
-        <div className='p-4'>
-          {isAuthenticated && <UsersData />}
-        </div>
-      </>
-    );
-  }
-  
-  export default HomeUser ;
+      </div>
+      <div className="p-4">
+        {isAuthenticated && <UsersData />}
+      </div>
+    </>
+  );
+}
+
+export default HomeUser;
