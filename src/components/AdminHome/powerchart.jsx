@@ -4,13 +4,13 @@ import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, 
 import Chart from "chart.js/auto";
 Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-export function ChartSR({ readings }) {
+export function ChartPower({ readings }) {
     const [selectedDate, setSelectedDate] = useState(""); // State untuk menyimpan tanggal yang dipilih
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
     }
-
+    
     // Filter readings berdasarkan tanggal yang dipilih
     const filteredReadings = selectedDate
         ? Object.keys(readings).filter((key) => {
@@ -18,26 +18,39 @@ export function ChartSR({ readings }) {
               return readingDate === selectedDate;
           })
         : Object.keys(readings);
-
-    const labels = filteredReadings.map((key) =>
-        new Date(readings[key].timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
-
-    const dataValues = filteredReadings.map((key) => readings[key].Irradiance);
-
+    
+    // Ambil data Volt dan Current untuk chart
+    const voltData = [];
+    const currentData = [];
+    
+    filteredReadings.forEach((key) => {
+        const reading = readings[key];
+        const timestamp = reading.timestamp;  // Timestamp
+    
+        // Pastikan Volt dan Current ada dan berupa objek, kemudian ubah menjadi array
+        const voltValues = reading.Volt ? Object.values(reading.Volt) : [];
+        const currentValues = reading.Current ? Object.values(reading.Current) : [];
+    
+        // Gabungkan data untuk chart
+        voltData.push(...voltValues);  // Tambahkan semua nilai Volt ke array
+        currentData.push(...currentValues);  // Tambahkan semua nilai Current ke array
+    });
+    
+    // Gabungkan data untuk chart
     const chartData = {
-        labels: labels,
+        labels: voltData.map((volt, index) => volt.toFixed(4)), // Gunakan Volt sebagai label di sumbu X
         datasets: [
             {
-                label: "Irradiance",
-                data: dataValues,
+                label: "Current (A)",
+                data: currentData, // Gunakan Current sebagai data di sumbu Y
                 borderColor: "#42A5F5",
                 backgroundColor: "rgba(66, 165, 245, 0.2)",
                 fill: true,
             },
         ],
     };
-
+    
+    // Chart options
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -46,18 +59,22 @@ export function ChartSR({ readings }) {
                 callbacks: {
                     label: function (context) {
                         const index = context.dataIndex;
-                        const readingKey = filteredReadings[index];
-                        const timestamp = readings[readingKey].timestamp;
+                        const voltValue = context.label;
+                        const currentValue = context.raw;
+    
+                        // Mendapatkan timestamp berdasarkan index
+                        const timestamp = filteredReadings[index];
                         const fullDate = new Date(timestamp * 1000);
                         const formattedDate = fullDate.toLocaleDateString();
                         const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-                        return `Date: ${formattedDate}, Time: ${formattedTime}, Irradiance: ${context.raw}`;
+    
+                        return `Volt: ${voltValue} V, Current: ${currentValue} A, Date: ${formattedDate}, Time: ${formattedTime}`;
                     },
                 },
             },
         },
     };
+    
 
     return (
 <div
@@ -68,7 +85,7 @@ export function ChartSR({ readings }) {
 >
     {/* Judul */}
     <h1 className="text-center text-2xl font-bold mb-4 tracking-wider">
-        Irradiance Chart
+        Power Chart
     </h1>
 
     {/* Input tanggal untuk filter */}

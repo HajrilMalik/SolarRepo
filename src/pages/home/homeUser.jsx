@@ -49,18 +49,12 @@ export function HomeUser () {
     setSelectedMarker(marker);
 
     if (marker) {
-      const auth = getAuth();
-      const user = auth.currentUser;
+      const srRef = ref(database, `UsersData/${marker.userId}/${marker.name}/readings`);
 
-      if (user) {
-        const uid = user.uid;
-        const srRef = ref(database, `UsersData/${uid}/${marker.name}/readings`);
-
-        onValue(srRef, (snapshot) => {
-          const data = snapshot.val();
-          setSelectedReadings(data || null); 
-        });
-      }
+      onValue(srRef, (snapshot) => {
+        const data = snapshot.val();
+        setSelectedReadings(data || null); // Simpan data readings di state
+      });
     } else {
       setSelectedReadings(null);
     }
@@ -102,23 +96,34 @@ export function HomeUser () {
       onValue(allMarkersRef, (snapshot) => {
         const allData = snapshot.val();
         const allMarkerData = [];
+      
         if (allData) {
           Object.keys(allData).forEach((userId) => {
             const userMarkers = allData[userId];
             Object.keys(userMarkers).forEach((srKey) => {
               const sr = userMarkers[srKey];
-              if (sr.Maps) {
-                allMarkerData.push({
-                  name: srKey,
-                  lat: parseFloat(sr.Maps.latitude),
-                  lng: parseFloat(sr.Maps.longitude),
-                });
+              
+              if (sr.Maps && sr.Maps.latitude && sr.Maps.longitude) {
+                const isOwner = userId === (user?.uid || "");
+                const isPublic = sr.Maps.isPublic === true;
+      
+                if (isPublic || isOwner) {
+                  allMarkerData.push({
+                    name: srKey,
+                    lat: parseFloat(sr.Maps.latitude),
+                    lng: parseFloat(sr.Maps.longitude),
+                    userId: userId,
+                    isPublic: isPublic,
+                  });
+                }
               }
             });
           });
         }
-        setMarkers((prevMarkers) => [...prevMarkers, ...allMarkerData]);
+      
+        setMarkers(allMarkerData);
       });
+      
     });
 
     return () => {
@@ -209,7 +214,7 @@ export function HomeUser () {
               />
               {markers.map((marker) => (
                 <Marker
-                  key={marker.name}
+                  key={`${marker.userId}-${marker.name}`}
                   position={[marker.lat, marker.lng]}
                   eventHandlers={{
                     click: () => toggleSidebar(marker),

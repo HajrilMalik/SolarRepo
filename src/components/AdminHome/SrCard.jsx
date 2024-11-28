@@ -16,6 +16,7 @@ import {
 import { ref, update } from "firebase/database";
 import { database } from "../../firebase/firebase"; // Firebase config path
 import { ChartSR } from "../AdminHome/chart";
+import { ChartPower } from "./powerchart";
 
 export function CardDefault({ srData, srKey }) {
   const [isOpen, setIsOpen] = useState(false); // Modal state
@@ -69,14 +70,31 @@ export function CardDefault({ srData, srKey }) {
       });
   };
 
+  const handleSetVisibility = (visibility) => {
+    const mapsRef = ref(database, `UsersData/${uid}/${srKey}/Maps`);
+    
+    update(mapsRef, { isPublic: visibility })
+      .then(() => {
+        alert(`Marker set to ${visibility ? "Public" : "Private"} successfully!`);
+      })
+      .catch((error) => {
+        console.error("Error updating visibility:", error);
+        alert("Failed to update marker visibility. Please try again.");
+      });
+  };
+  
+
   const timestampCount = Object.keys(srData.readings || {}).length;
 
   return (
     <>
       <Card className="mt-6 w-96" color="blue-gray">
         <CardBody>
-          <CardHeader color="blue-white" className="relative h-56 m-1">
+          <CardHeader color="blue-white" className="relative h-auto m-1">
             <ChartSR readings={srData.readings} /> {/* Kirim data readings ke ChartSR */}
+          </CardHeader>
+          <CardHeader color="blue-white" className="relative h-auto m-1">
+            <ChartPower readings={srData.readings} />
           </CardHeader>
           <Typography variant="h5" color="blue-white" className="mb-2">
             {srKey} - Total Timestamps: {timestampCount}
@@ -84,10 +102,17 @@ export function CardDefault({ srData, srKey }) {
           <Typography>Range: {srData.charts?.range || "N/A"}</Typography>
         </CardBody>
         <CardFooter className="pt-0">
-          <Button color="blue" onClick={toggleModal}>
-            Add Location
-          </Button>
-        </CardFooter>
+  <Button color="blue" onClick={toggleModal}>
+    Add Location
+  </Button>
+  <Button color="green" onClick={() => handleSetVisibility(true)}>
+    Public
+  </Button>
+  <Button color="red" onClick={() => handleSetVisibility(false)}>
+    Private
+  </Button>
+</CardFooter>
+
       </Card>
 
       {/* Modal for Adding Location */}
