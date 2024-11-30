@@ -40,7 +40,7 @@ export function UsersData() {
 
     return (
         <div className='flex justify-center flex-wrap gap-3'>
-            <Card color='blue' className="max-h-[400px] overflow-y-auto">
+            <Card color='blue' className="max-h-[400px] overflow-x-auto">
                 <CardBody>
                     <div className="justify-center flex flex-wrap gap-3 w-full">
                         {Object.keys(data).map((srKey) => (
