@@ -61,7 +61,7 @@ export function ChartSR({ readings }) {
 
     return (
 <div
-    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-12 rounded-lg shadow-lg"
     style={{
         background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
     }}
@@ -90,7 +90,7 @@ export function ChartSR({ readings }) {
 
     {/* Chart */}
     <div
-        className="w-full h-52 rounded-lg bg-white p-4 shadow-md"
+        className="w-full h-64 rounded-lg bg-white p-4 shadow-md"
         style={{
             border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
         }}

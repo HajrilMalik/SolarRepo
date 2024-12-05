@@ -124,7 +124,7 @@ export function ChartPower({ readings }) {
 
     return (
         <div
-            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-12 rounded-lg shadow-lg"
             style={{
                 background: "linear-gradient(135deg, #4A90E2, #50C9C3)",
             }}
