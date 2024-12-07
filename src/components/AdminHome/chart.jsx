@@ -144,14 +144,16 @@ export function ChartSR({ readings }) {
                 />
             </div>
 
-            <div
-                className="w-full h-64 rounded-lg bg-white p-4 shadow-md"
-                style={{
-                    border: "1px solid rgba(0, 0, 0, 0.1)",
-                }}
-            >
-                <Line data={chartData} options={chartOptions} />
-            </div>
-        </div>
+    {/* Chart */}
+    <div
+        className="w-full h-52 rounded-lg bg-white p-4 shadow-md"
+        style={{
+            border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
+        }}
+    >
+        <Line data={chartData} options={chartOptions} />
+    </div>
+</div>
+
     );
 }
