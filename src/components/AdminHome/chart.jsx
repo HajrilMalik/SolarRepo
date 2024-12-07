@@ -1,11 +1,31 @@
 import { useState } from "react";
 import { Line } from "react-chartjs-2";
-import { CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import {
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+} from "chart.js";
 import Chart from "chart.js/auto";
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+import zoomPlugin from "chartjs-plugin-zoom";
+
+// Registrasi plugin zoom
+Chart.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    zoomPlugin
+);
 
 export function ChartSR({ readings }) {
-    const [selectedDate, setSelectedDate] = useState(""); // State untuk menyimpan tanggal yang dipilih
+    const [selectedDate, setSelectedDate] = useState("");
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
@@ -19,20 +39,37 @@ export function ChartSR({ readings }) {
           })
         : Object.keys(readings);
 
-    const labels = filteredReadings.map((key) =>
-        new Date(readings[key].timestamp * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+    // Ambil data Irradiance dan timestamp
+    let readingData = filteredReadings.map((key) => {
+        const reading = readings[key];
+        return {
+            timestamp: reading.timestamp,
+            irradiance: reading.Irradiance,
+        };
+    });
 
-    const dataValues = filteredReadings.map((key) => readings[key].Irradiance);
+    // Urutkan berdasarkan timestamp
+    readingData = readingData.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Ambil label dan dataset
+    const labels = readingData.map((data) => {
+        const date = new Date(data.timestamp * 1000);
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    });
+    const irradianceData = readingData.map((data) => data.irradiance);
+
+    // Tentukan batas awal (7 data terbaru)
+    const initialRangeStart = labels.length > 20 ? labels.length - 20 : 0;
 
     const chartData = {
         labels: labels,
         datasets: [
             {
                 label: "Irradiance",
-                data: dataValues,
-                borderColor: "#42A5F5",
+                data: irradianceData,
+                borderColor: "rgba(66, 165, 245, 1)",
                 backgroundColor: "rgba(66, 165, 245, 0.2)",
+                tension: 0.4,
                 fill: true,
             },
         ],
@@ -46,58 +83,75 @@ export function ChartSR({ readings }) {
                 callbacks: {
                     label: function (context) {
                         const index = context.dataIndex;
-                        const readingKey = filteredReadings[index];
-                        const timestamp = readings[readingKey].timestamp;
+                        const timestamp = readingData[index].timestamp;
                         const fullDate = new Date(timestamp * 1000);
                         const formattedDate = fullDate.toLocaleDateString();
                         const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-                        return `Date: ${formattedDate}, Time: ${formattedTime}, Irradiance: ${context.raw}`;
+                        return `Irradiance: ${context.raw}, \nDate: ${formattedDate}, Time: ${formattedTime}`;
                     },
                 },
+            },
+            zoom: {
+                pan: {
+                    enabled: true,
+                    mode: "x",
+                },
+                zoom: {
+                    enabled: true,
+                    mode: "x",
+                    wheel: {
+                        enabled: true,
+                    },
+                },
+            },
+        },
+        scales: {
+            x: {
+                ticks: {
+                    autoSkip: true,
+                },
+                min: initialRangeStart,
+                max: labels.length - 1, // Tampilkan hanya 7 data terbaru secara default
             },
         },
     };
 
     return (
-<div
-    className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
-    style={{
-        background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
-    }}
->
-    {/* Judul */}
-    <h1 className="text-center text-2xl font-bold mb-4 tracking-wider">
-        Irradiance Chart
-    </h1>
-
-    {/* Input tanggal untuk filter */}
-    <div className="mb-4">
-        <label
-            htmlFor="dateFilter"
-            className="block mb-2 font-medium text-white"
+        <div
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+            style={{
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+            }}
         >
-            Select Date:
-        </label>
-        <input
-            type="date"
-            id="dateFilter"
-            className="border rounded px-3 py-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-        />
-    </div>
+            <h1 className="text-center text-2xl font-bold mb-4 tracking-wider">
+                Irradiance Chart
+            </h1>
 
-    {/* Chart */}
-    <div
-        className="w-full h-52 rounded-lg bg-white p-4 shadow-md"
-        style={{
-            border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
-        }}
-    >
-        <Line data={chartData} options={chartOptions} />
-    </div>
-</div>
+            <div className="mb-4">
+                <label
+                    htmlFor="dateFilter"
+                    className="block mb-2 font-medium text-white"
+                >
+                    Select Date:
+                </label>
+                <input
+                    type="date"
+                    id="dateFilter"
+                    className="border rounded px-3 py-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                />
+            </div>
 
+            <div
+                className="w-full h-64 rounded-lg bg-white p-4 shadow-md"
+                style={{
+                    border: "1px solid rgba(0, 0, 0, 0.1)",
+                }}
+            >
+                <Line data={chartData} options={chartOptions} />
+            </div>
+        </div>
     );
 }

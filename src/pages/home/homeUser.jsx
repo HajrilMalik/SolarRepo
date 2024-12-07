@@ -10,6 +10,7 @@ import { Button, Input, Navbar, Typography } from "@material-tailwind/react";
 import { Card } from "@material-tailwind/react";
 import { ChartSR } from "@/components/AdminHome/chart"; 
 import { UsersData } from '@/components/AdminHome/AdminHome';
+import { TabsDefault } from '@/components/AdminHome/Sbar';
 //raja teja
 function MapFocus({ position }) {
   const map = useMap();
@@ -166,16 +167,8 @@ export function HomeUser () {
               <Typography variant="h5" color="blue-gray">Sidebar</Typography>
               <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
             </div>
-            <div>
-              <p><strong>Nama Marker:</strong> {selectedMarker.name}</p>
-              <p><strong>Latitude:</strong> {selectedMarker.lat}</p>
-              <p><strong>Longitude:</strong> {selectedMarker.lng}</p>
-            </div>
-            {selectedReadings ? (
-              <ChartSR readings={selectedReadings} />
-            ) : (
-              <Typography>Tidak ada data tersedia untuk marker ini</Typography>
-            )}
+            <TabsDefault selectedReadings={selectedReadings} selectedMarker={selectedMarker} />
+            
           </Card>
         )}
 

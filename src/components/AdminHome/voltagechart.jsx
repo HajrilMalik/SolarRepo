@@ -5,7 +5,7 @@ import zoomPlugin from "chartjs-plugin-zoom";
 
 Chart.register(zoomPlugin);
 
-export function ChartPower({ readings }) {
+export function ChartVoltagePower({ readings }) {
     const [selectedTimestamp, setSelectedTimestamp] = useState("");
 
     if (!readings || Object.keys(readings).length === 0) {
@@ -27,15 +27,18 @@ export function ChartPower({ readings }) {
     const voltData = Object.values(activeData.Volt || {}).map((v) => v || 0);
     const currentData = Object.values(activeData.Current || {}).map((c) => c || 0);
 
-    // Siapkan data untuk chart
-    const chartData = {
+    // Hitung data Power (Volt * Current)
+    const powerData = voltData.map((v, i) => v * currentData[i]);
+
+    // Siapkan data untuk grafik Power vs Volt
+    const chartDataPower = {
         labels: voltData,
         datasets: [
             {
-                label: "Current vs Volt",
-                data: currentData.map((y, i) => ({ x: voltData[i], y })),
-                borderColor: "rgba(75, 192, 192, 1)",
-                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                label: "Power vs Volt",
+                data: powerData.map((y, i) => ({ x: voltData[i], y })),
+                borderColor: "rgba(255, 99, 132, 1)",
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
                 tension: 0.4,
                 fill: false,
             },
@@ -61,7 +64,7 @@ export function ChartPower({ readings }) {
             y: {
                 title: {
                     display: true,
-                    text: "Current",
+                    text: "Power",
                 },
             },
         },
@@ -69,7 +72,7 @@ export function ChartPower({ readings }) {
             tooltip: {
                 callbacks: {
                     label: (context) =>
-                        `Volt: ${context.raw.x}, Current: ${context.raw.y}`,
+                        `Volt: ${context.raw.x}, Power: ${context.raw.y}`,
                 },
             },
             zoom: {
@@ -86,16 +89,15 @@ export function ChartPower({ readings }) {
             },
         },
     };
-    
 
     return (
         <div
-        className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
-        style={{
-            background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
-        }}
-    >
-            <h1 className="text-2xl font-bold text-center text-green-600 mb-2">Current vs Volt Chart</h1>
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+            style={{
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+            }}
+        >
+            <h1 className="text-2xl font-bold text-center text-green-600 mb-2">Power vs Volt Chart</h1>
 
             <div className="mb-2">
                 <label
@@ -124,7 +126,7 @@ export function ChartPower({ readings }) {
                     border: "1px solid rgba(0, 0, 0, 0.1)",
                 }}
             >
-                <Line data={chartData} options={chartOptions} />
+                <Line data={chartDataPower} options={chartOptions} />
             </div>
         </div>
     );

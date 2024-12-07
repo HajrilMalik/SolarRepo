@@ -1,16 +1,15 @@
-// src/firebase/firebase.js
 import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 
-// Konfigurasi Firebase Anda
+// Mengambil konfigurasi dari variabel lingkungan
 export const firebaseConfig = {
-    apiKey: "AIzaSyBFrYcwWKfN9zLepg0P3tlFNmlLP7TDSMw",
-    authDomain: "solar-ce53e.firebaseapp.com",
-    databaseURL: "https://solar-ce53e-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "solar-ce53e",
-    storageBucket: "solar-ce53e.firebasestorage.app",
-    messagingSenderId: "499406911147",
-    appId: "1:499406911147:web:5970d609596a6357fc29ee"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
