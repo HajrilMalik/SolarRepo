@@ -23,6 +23,7 @@ import { database } from "../../firebase/firebase"; // Firebase config path
 import { ChartSR } from "../AdminHome/chart";
 import { ChartPower } from "./powerchart";
 import { ChartVoltagePower } from "./voltagechart"; // Import the voltage chart component
+import { Data } from "./data"; // Import the Data component
 
 export function CardDefault({ srData, srKey }) {
   const [isOpen, setIsOpen] = useState(false); // Modal state
@@ -95,13 +96,14 @@ export function CardDefault({ srData, srKey }) {
 
   return (
     <>
-      <Card className="mt-6  w-full md:w-[48%]" color="blue-gray">
+      <Card className="mt-6 w-full md:w-[48%]" color="blue-gray">
         <CardBody>
           <Tabs value={activeTab} onChange={setActiveTab}>
             <TabsHeader>
-              <Tab value="chartSR">Irradience</Tab>
+              <Tab value="chartSR">Irradiance</Tab>
               <Tab value="chartPower">Power</Tab>
               <Tab value="voltage">Voltage</Tab>
+              <Tab value="data">Data</Tab> {/* New Tab for Data */}
             </TabsHeader>
             <TabsBody>
               <TabPanel className="w-full" value="chartSR">
@@ -113,8 +115,11 @@ export function CardDefault({ srData, srKey }) {
               <TabPanel value="voltage">
                 <ChartVoltagePower readings={srData.readings} /> {/* Use the voltage chart here */}
               </TabPanel>
+              <TabPanel value="data">
+                <Data readings={srData.readings} /> {/* Add the Data component here */}
+              </TabPanel>
             </TabsBody>
-          </Tabs>
+            </Tabs>
           <Typography variant="h5" color="blue-white" className="mb-2">
             {srKey} - Total Timestamps: {timestampCount}
           </Typography>

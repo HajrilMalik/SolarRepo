@@ -7,20 +7,10 @@ import {
 } from "@material-tailwind/react";
 import { ChartSR } from "../AdminHome/chart"; // Pastikan path ke ChartSR benar
 import { ChartPower } from "./powerchart";   // Pastikan path ke ChartPower benar
+import { Data } from "./data"; // Import komponen Data
 
 export function TabsDefault({ selectedReadings, selectedMarker }) {
   const data = [
-    {
-      label: "Data Marker",
-      value: "markerData",
-      component: (
-        <div>
-          <p><strong>Nama Marker:</strong> {selectedMarker.name}</p>
-          <p><strong>Latitude:</strong> {selectedMarker.lat}</p>
-          <p><strong>Longitude:</strong> {selectedMarker.lng}</p>
-        </div>
-      ),
-    },
     {
       label: "Chart SR",
       value: "chartSR",
@@ -31,10 +21,15 @@ export function TabsDefault({ selectedReadings, selectedMarker }) {
       value: "chartPower",
       component: <ChartPower readings={selectedReadings} />,
     },
+    {
+      label: "Data SR",
+      value: "dataSR",
+      component: <Data readings={selectedReadings} selectedMarker={selectedMarker} />, // Hanya di sini
+    },
   ];
 
   return (
-    <Tabs value="markerData">
+    <Tabs value="dataSR">
       <TabsHeader>
         {data.map(({ label, value }) => (
           <Tab key={value} value={value}>
@@ -53,3 +48,4 @@ export function TabsDefault({ selectedReadings, selectedMarker }) {
     </Tabs>
   );
 }
+

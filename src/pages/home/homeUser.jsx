@@ -161,13 +161,21 @@ export function HomeUser () {
       <div className={`flex ${isMobile && isSidebarOpen ? "flex-col" : ""}`}>
         {isSidebarOpen && selectedMarker && (
           <Card
-            className={`h-[calc(100vh-2rem)] ${isMobile ? "w-full" : "w-96"} p-4 shadow-xl shadow-blue-gray-900/5`}
+            className={`h-[calc(100vh-2rem)] ${isMobile ? "w-full" : "w-[45%]"} p-4 shadow-xl shadow-blue-gray-900/5`}
             style={isMobile ? { marginTop: '1rem' } : {}}>
-            <div className="mb-2 p-4 flex justify-between items-center">
-              <Typography variant="h5" color="blue-gray">Sidebar</Typography>
-              <button onClick={() => toggleSidebar()} className="text-gray-500 hover:text-gray-700">X</button>
-            </div>
-            <TabsDefault selectedReadings={selectedReadings} selectedMarker={selectedMarker} />
+<div className="mb-2 p-2 flex justify-between items-center relative">
+  <div className='w-[97%]'>
+    <TabsDefault selectedReadings={selectedReadings} selectedMarker={selectedMarker} />
+  </div>
+  <button 
+    onClick={() => toggleSidebar()} 
+    className="absolute top-4 right-1 text-gray-500 hover:text-gray-700"
+  >
+    X
+  </button>
+</div>
+
+            
             
           </Card>
         )}

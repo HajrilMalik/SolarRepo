@@ -119,26 +119,20 @@ export function ChartSR({ readings }) {
 
     return (
         <div
-            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-4 rounded-lg shadow-lg"
             style={{
                 background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
             }}
         >
-            <h1 className="text-center text-2xl font-bold mb-4 tracking-wider">
+            <h1 className="text-center text-2xl font-bold mb-2 tracking-wider">
                 Irradiance Chart
             </h1>
 
-            <div className="mb-4">
-                <label
-                    htmlFor="dateFilter"
-                    className="block mb-2 font-medium text-white"
-                >
-                    Select Date:
-                </label>
+            <div className="mb-2">
                 <input
                     type="date"
                     id="dateFilter"
-                    className="border rounded px-3 py-2 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                 />
@@ -146,7 +140,7 @@ export function ChartSR({ readings }) {
 
     {/* Chart */}
     <div
-        className="w-full h-52 rounded-lg bg-white p-4 shadow-md"
+        className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
         style={{
             border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
         }}
