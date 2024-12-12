@@ -11,7 +11,7 @@ import { Card } from "@material-tailwind/react";
 import { ChartSR } from "@/components/AdminHome/chart"; 
 import { UsersData } from '@/components/AdminHome/AdminHome';
 import { TabsDefault } from '@/components/AdminHome/Sbar';
-//raja teja
+
 function MapFocus({ position }) {
   const map = useMap();
   useEffect(() => {
@@ -82,6 +82,7 @@ export function HomeUser () {
                   name: srKey,
                   lat: parseFloat(sr.Maps.latitude),
                   lng: parseFloat(sr.Maps.longitude),
+                  lastReadingTime: sr.readings ? Math.max(...Object.keys(sr.readings)) : 0, // Get last reading timestamp
                 });
               }
             });
@@ -104,10 +105,17 @@ export function HomeUser () {
             Object.keys(userMarkers).forEach((srKey) => {
               const sr = userMarkers[srKey];
               
+            
               if (sr.Maps && sr.Maps.latitude && sr.Maps.longitude) {
                 const isOwner = userId === (user?.uid || "");
                 const isPublic = sr.Maps.isPublic === true;
       
+                const lastReadingTime = sr.readings ? Math.max(...Object.keys(sr.readings)) : 0;
+                const currentTime = Date.now() / 1000; // Current time in seconds
+                const oneDayInSeconds = 86400; // 24 hours in seconds
+                
+                const isActive = currentTime - lastReadingTime <= oneDayInSeconds;
+
                 if (isPublic || isOwner) {
                   allMarkerData.push({
                     name: srKey,
@@ -115,6 +123,7 @@ export function HomeUser () {
                     lng: parseFloat(sr.Maps.longitude),
                     userId: userId,
                     isPublic: isPublic,
+                    isActive: isActive, // Add isActive flag
                   });
                 }
               }
@@ -163,20 +172,18 @@ export function HomeUser () {
           <Card
             className={`h-[calc(100vh-2rem)] ${isMobile ? "w-full" : "w-[45%]"} p-4 shadow-xl shadow-blue-gray-900/5`}
             style={isMobile ? { marginTop: '1rem' } : {}}>
-<div className="mb-2 p-2 flex justify-between items-center relative">
-  <div className='w-[97%]'>
-    <TabsDefault selectedReadings={selectedReadings} selectedMarker={selectedMarker} />
-  </div>
-  <button 
-    onClick={() => toggleSidebar()} 
-    className="absolute top-4 right-1 text-gray-500 hover:text-gray-700"
-  >
-    X
-  </button>
-</div>
 
-            
-            
+            <div className="mb-2 p-2 flex justify-between items-center relative">
+              <div className='w-[97%]'>
+                <TabsDefault selectedReadings={selectedReadings} selectedMarker={selectedMarker} />
+              </div>
+              <button 
+                onClick={() => toggleSidebar()} 
+                className="absolute top-4 right-1 text-gray-500 hover:text-gray-700"
+              >
+                X
+              </button>
+            </div>
           </Card>
         )}
 
@@ -217,6 +224,12 @@ export function HomeUser () {
                 <Marker
                   key={`${marker.userId}-${marker.name}`}
                   position={[marker.lat, marker.lng]}
+                  icon={new L.Icon({
+                    iconUrl: marker.isActive ? 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png' : 'img/Red-Mark.png',
+                    iconSize: marker.isActive ? [25, 41] : [36, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                  })}
                   eventHandlers={{
                     click: () => toggleSidebar(marker),
                   }}

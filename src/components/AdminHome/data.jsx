@@ -1,7 +1,21 @@
 import { useState } from "react";
 import { Progress } from "@material-tailwind/react";
 
+// Fungsi untuk memeriksa apakah SR masih aktif
+export const isActive = (readings) => {
+  const threshold = 86400; // Threshold dalam detik (1 hari)
+  const now = Math.floor(Date.now() / 1000); // Waktu saat ini dalam detik
+  const timestampKeys = Object.keys(readings);
+  const latestTimestamp = Math.max(...timestampKeys.map((key) => parseInt(key))); // Timestamp terbaru
+  const timeDiff = now - latestTimestamp;
+
+  return timeDiff <= threshold; // Jika perbedaan waktu lebih kecil atau sama dengan threshold, berarti aktif
+};
+
+
+
 export function Data({ readings }) {
+  const srStatus = isActive(readings) ? "Aktif" : "Tidak Aktif";
   // Urutkan timestamp berdasarkan waktu terbaru
   const timestampKeys = Object.keys(readings).sort((a, b) => b - a);
   
@@ -17,6 +31,7 @@ export function Data({ readings }) {
   if (!currentReading) {
     return <div>No data available for the selected timestamp</div>;
   }
+  
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 h-full">
@@ -35,6 +50,13 @@ export function Data({ readings }) {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Status Keterangan */}
+      <div className="mb-2">
+        <span className={`text-xl font-semibold ${srStatus === 'Aktif' ? 'text-green-600' : 'text-red-600'}`}>
+          {srStatus}
+        </span>
       </div>
 
       {/* Data Section */}
