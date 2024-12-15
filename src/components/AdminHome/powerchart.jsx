@@ -27,13 +27,18 @@ export function ChartPower({ readings }) {
     const voltData = Object.values(activeData.Volt || {}).map((v) => v || 0);
     const currentData = Object.values(activeData.Current || {}).map((c) => c || 0);
 
+    // Gabungkan Volt dan Current, lalu urutkan berdasarkan Volt
+    const sortedData = voltData
+        .map((v, i) => ({ x: v, y: currentData[i] || 0 }))
+        .sort((a, b) => a.x - b.x);
+
     // Siapkan data untuk chart
     const chartData = {
-        labels: voltData,
+        labels: sortedData.map((point) => point.x),
         datasets: [
             {
                 label: "Current vs Volt",
-                data: currentData.map((y, i) => ({ x: voltData[i], y })),
+                data: sortedData,
                 borderColor: "rgba(75, 192, 192, 1)",
                 backgroundColor: "rgba(75, 192, 192, 0.2)",
                 tension: 0.4,
@@ -42,7 +47,7 @@ export function ChartPower({ readings }) {
         ],
     };
 
-    const initialRangeStart = voltData.length > 25 ? voltData.length - 25 : 0;
+    const initialRangeStart = sortedData.length > 25 ? sortedData.length - 25 : 0;
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -52,11 +57,12 @@ export function ChartPower({ readings }) {
                     display: true,
                     text: "Volt",
                 },
+                type: "linear", // Pastikan skala X bersifat linear
                 ticks: {
-                    autoSkip: true,
+                    stepSize: 0.2, // Interval sumbu X
+                    callback: (value) => value.toFixed(1), // Format label menjadi 1 desimal
                 },
-                min: initialRangeStart,
-                max: voltData.length - 1,
+                beginAtZero: true, // Mulai dari 0
             },
             y: {
                 title: {
@@ -90,11 +96,11 @@ export function ChartPower({ readings }) {
 
     return (
         <div
-        className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
-        style={{
-            background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
-        }}
-    >
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
+            style={{
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+            }}
+        >
             <h1 className="text-2xl font-bold text-center text-green-600 mb-2">Current vs Volt Chart</h1>
 
             <div className="mb-2">

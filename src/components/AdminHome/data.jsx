@@ -64,7 +64,7 @@ export function Data({ readings }) {
         {/* Irradiance */}
         <div className="p-4 rounded-lg shadow-md bg-gray-50 h-full">
           <h4 className="text-lg font-medium text-gray-800">Irradiance</h4>
-          <Progress value={currentReading.Irradiance} color="lightBlue" className="h-2" />
+          <Progress value={currentReading.Irradiance} color="amber" className="h-2" />
           <div className="text-center mt-1 text-gray-600 text-sm">{currentReading.Irradiance} W/m²</div>
         </div>
 

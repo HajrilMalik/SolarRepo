@@ -30,13 +30,18 @@ export function ChartVoltagePower({ readings }) {
     // Hitung data Power (Volt * Current)
     const powerData = voltData.map((v, i) => v * currentData[i]);
 
-    // Siapkan data untuk grafik Power vs Volt
+    // Gabungkan Volt dan Power menjadi pasangan {x, y}, lalu urutkan berdasarkan Volt (x)
+    const sortedData = voltData
+        .map((v, i) => ({ x: v, y: powerData[i] }))
+        .sort((a, b) => a.x - b.x);
+
+    // Siapkan data untuk grafik dari data yang sudah diurutkan
     const chartDataPower = {
-        labels: voltData,
+        labels: sortedData.map((point) => point.x), // Sumbu x setelah diurutkan
         datasets: [
             {
                 label: "Power vs Volt",
-                data: powerData.map((y, i) => ({ x: voltData[i], y })),
+                data: sortedData, // Data sudah dalam format {x, y}
                 borderColor: "rgba(255, 99, 132, 1)",
                 backgroundColor: "rgba(255, 99, 132, 0.2)",
                 tension: 0.4,
@@ -45,7 +50,6 @@ export function ChartVoltagePower({ readings }) {
         ],
     };
 
-    const initialRangeStart = voltData.length > 25 ? voltData.length - 25 : 0;
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -55,16 +59,17 @@ export function ChartVoltagePower({ readings }) {
                     display: true,
                     text: "Volt",
                 },
+                type: "linear", // Pastikan skala X bersifat linear
                 ticks: {
-                    autoSkip: true,
+                    stepSize: 0.2, // Interval sumbu X
+                    callback: (value) => value.toFixed(1), // Format label menjadi 1 desimal
                 },
-                min: initialRangeStart,
-                max: voltData.length - 1,
+                beginAtZero: true, // Mulai dari 0
             },
             y: {
                 title: {
                     display: true,
-                    text: "Power",
+                    text: "Current",
                 },
             },
         },
@@ -72,7 +77,7 @@ export function ChartVoltagePower({ readings }) {
             tooltip: {
                 callbacks: {
                     label: (context) =>
-                        `Volt: ${context.raw.x}, Power: ${context.raw.y}`,
+                        `Volt: ${context.raw.x}, Current: ${context.raw.y}`,
                 },
             },
             zoom: {
@@ -89,6 +94,7 @@ export function ChartVoltagePower({ readings }) {
             },
         },
     };
+    
 
     return (
         <div

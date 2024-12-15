@@ -120,7 +120,7 @@ export function CardDefault({ srData, srKey }) {
               </TabPanel>
             </TabsBody>
             </Tabs>
-          <Typography variant="h5" color="blue-white" className="mb-2">
+          <Typography variant="h5" color="light-blue" className="mb-2">
             {srKey} - Total Timestamps: {timestampCount}
           </Typography>
           <Typography>Range: {srData.charts?.range || "N/A"}</Typography>
