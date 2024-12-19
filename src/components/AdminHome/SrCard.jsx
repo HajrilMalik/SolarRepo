@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   Card,
-  CardHeader,
   CardBody,
   CardFooter,
   Typography,
@@ -22,54 +21,56 @@ import { ref, update } from "firebase/database";
 import { database } from "../../firebase/firebase"; // Firebase config path
 import { ChartSR } from "../AdminHome/chart";
 import { ChartPower } from "./powerchart";
-import { ChartVoltagePower } from "./voltagechart"; // Import the voltage chart component
-import { ChartRumus } from "./rumusChart"; // Import the Rumus Chart component
-import { Data } from "./data"; // Import the Data component
+import { ChartVoltagePower } from "./voltagechart";
+import { ChartRumus } from "./rumusChart";
+import { Data } from "./data";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
+import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
+import "leaflet/dist/leaflet.css";
+import "leaflet-geosearch/dist/geosearch.css";
 
 export function CardDefault({ srData, srKey }) {
-  const [isOpen, setIsOpen] = useState(false); // Modal state
-  const [lat, setLat] = useState(""); // Latitude state
-  const [lng, setLng] = useState(""); // Longitude state
+  const [isOpen, setIsOpen] = useState(false);
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
   const [uid, setUid] = useState(null);
-  const [activeTab, setActiveTab] = useState("chartSR"); // Active Tab State
-  const [selectedChart, setSelectedChart] = useState("chartSR"); // State for selected chart
+  const [activeTab, setActiveTab] = useState("chartSR");
+  const [selectedChart, setSelectedChart] = useState("chartSR");
 
   useEffect(() => {
     const auth = getAuth();
-
-    // Mendapatkan UID pengguna yang sedang login
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setUid(user.uid); // Simpan UID pengguna ke state
+        setUid(user.uid);
       } else {
-        console.log('Pengguna belum login');
+        console.log("Pengguna belum login");
       }
     });
-
-    return () => unsubscribe(); // Cleanup listener
+    return () => unsubscribe();
   }, []);
 
-  // Toggle modal visibility
   const toggleModal = () => {
     setIsOpen(!isOpen);
     setLat("");
     setLng("");
   };
 
-  // Handle form submission
   const handleSaveLocation = () => {
     if (!lat || !lng) {
       alert("Please fill in both Latitude and Longitude.");
       return;
     }
 
-    // Firebase reference for Maps key
     const mapsRef = ref(database, `UsersData/${uid}/${srKey}/Maps`);
-
-    // Save data to Firebase
     update(mapsRef, {
-      latitude: lat,
-      longitude: lng,
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
     })
       .then(() => {
         alert("Location added successfully!");
@@ -83,10 +84,11 @@ export function CardDefault({ srData, srKey }) {
 
   const handleSetVisibility = (visibility) => {
     const mapsRef = ref(database, `UsersData/${uid}/${srKey}/Maps`);
-
     update(mapsRef, { isPublic: visibility })
       .then(() => {
-        alert(`Marker set to ${visibility ? "Public" : "Private"} successfully!`);
+        alert(
+          `Marker set to ${visibility ? "Public" : "Private"} successfully!`
+        );
       })
       .catch((error) => {
         console.error("Error updating visibility:", error);
@@ -95,6 +97,47 @@ export function CardDefault({ srData, srKey }) {
   };
 
   const timestampCount = Object.keys(srData.readings || {}).length;
+
+  // Custom GeoSearch Component
+  function MapWithSearch() {
+    const map = useMap();
+
+    useEffect(() => {
+      const provider = new OpenStreetMapProvider();
+      const searchControl = new GeoSearchControl({
+        provider,
+        style: "bar",
+        autoComplete: true,
+        autoCompleteDelay: 250,
+        retainZoomLevel: false,
+        searchLabel: "Search location",
+      });
+
+      map.addControl(searchControl);
+
+      map.on("geosearch/showlocation", (result) => {
+        const { x, y } = result.location;
+        setLng(x);
+        setLat(y);
+      });
+
+      return () => map.removeControl(searchControl);
+    }, [map]);
+
+    return null;
+  }
+
+  function LocationMarker() {
+    const map = useMapEvents({
+      click(e) {
+        const { lat, lng } = e.latlng;
+        setLat(lat);
+        setLng(lng);
+      },
+    });
+
+    return lat && lng ? <Marker position={[lat, lng]} /> : null;
+  }
 
   return (
     <>
@@ -105,11 +148,10 @@ export function CardDefault({ srData, srKey }) {
               <Tab value="chartSR">Irradiance</Tab>
               <Tab value="chartPower">Power</Tab>
               <Tab value="voltage">Voltage</Tab>
-              <Tab value="data">Data</Tab> {/* New Tab for Data */}
+              <Tab value="data">Data</Tab>
             </TabsHeader>
             <TabsBody>
               <TabPanel className="w-full" value="chartSR">
-                {/* Dropdown inside the "Irradiance" tab */}
                 <div className="mb-4">
                   <label className="mr-2 text-gray-700">Select Chart:</label>
                   <select
@@ -121,8 +163,6 @@ export function CardDefault({ srData, srKey }) {
                     <option value="chartRumus">ChartRumus</option>
                   </select>
                 </div>
-
-                {/* Render the selected chart component */}
                 {selectedChart === "chartSR" ? (
                   <ChartSR readings={srData.readings} />
                 ) : (
@@ -133,10 +173,10 @@ export function CardDefault({ srData, srKey }) {
                 <ChartPower readings={srData.readings} />
               </TabPanel>
               <TabPanel value="voltage">
-                <ChartVoltagePower readings={srData.readings} /> {/* Use the voltage chart here */}
+                <ChartVoltagePower readings={srData.readings} />
               </TabPanel>
               <TabPanel value="data">
-                <Data readings={srData.readings} /> {/* Add the Data component here */}
+                <Data readings={srData.readings} />
               </TabPanel>
             </TabsBody>
           </Tabs>
@@ -177,6 +217,15 @@ export function CardDefault({ srData, srKey }) {
               type="number"
               step="any"
             />
+            <MapContainer
+              center={[lat || -6.1751, lng || 106.865]}
+              zoom={13}
+              style={{ height: "300px", width: "100%" }}
+            >
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapWithSearch />
+              <LocationMarker />
+            </MapContainer>
           </div>
         </DialogBody>
         <DialogFooter>
