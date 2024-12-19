@@ -23,6 +23,7 @@ import { database } from "../../firebase/firebase"; // Firebase config path
 import { ChartSR } from "../AdminHome/chart";
 import { ChartPower } from "./powerchart";
 import { ChartVoltagePower } from "./voltagechart"; // Import the voltage chart component
+import { ChartRumus } from "./rumusChart"; // Import the Rumus Chart component
 import { Data } from "./data"; // Import the Data component
 
 export function CardDefault({ srData, srKey }) {
@@ -31,6 +32,7 @@ export function CardDefault({ srData, srKey }) {
   const [lng, setLng] = useState(""); // Longitude state
   const [uid, setUid] = useState(null);
   const [activeTab, setActiveTab] = useState("chartSR"); // Active Tab State
+  const [selectedChart, setSelectedChart] = useState("chartSR"); // State for selected chart
 
   useEffect(() => {
     const auth = getAuth();
@@ -107,7 +109,25 @@ export function CardDefault({ srData, srKey }) {
             </TabsHeader>
             <TabsBody>
               <TabPanel className="w-full" value="chartSR">
-                <ChartSR readings={srData.readings} />
+                {/* Dropdown inside the "Irradiance" tab */}
+                <div className="mb-4">
+                  <label className="mr-2 text-gray-700">Select Chart:</label>
+                  <select
+                    value={selectedChart}
+                    onChange={(e) => setSelectedChart(e.target.value)}
+                    className="p-2 border rounded"
+                  >
+                    <option value="chartSR">ChartSR</option>
+                    <option value="chartRumus">ChartRumus</option>
+                  </select>
+                </div>
+
+                {/* Render the selected chart component */}
+                {selectedChart === "chartSR" ? (
+                  <ChartSR readings={srData.readings} />
+                ) : (
+                  <ChartRumus readings={srData.readings} />
+                )}
               </TabPanel>
               <TabPanel value="chartPower">
                 <ChartPower readings={srData.readings} />
@@ -119,7 +139,7 @@ export function CardDefault({ srData, srKey }) {
                 <Data readings={srData.readings} /> {/* Add the Data component here */}
               </TabPanel>
             </TabsBody>
-            </Tabs>
+          </Tabs>
           <Typography variant="h5" color="light-blue" className="mb-2">
             {srKey} - Total Timestamps: {timestampCount}
           </Typography>
