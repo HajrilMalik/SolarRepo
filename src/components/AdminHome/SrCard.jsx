@@ -40,7 +40,7 @@ export function CardDefault({ srData, srKey }) {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [uid, setUid] = useState(null);
-  const [activeTab, setActiveTab] = useState("chartSR");
+  const [activeTab, setActiveTab] = useState("data");
   const [selectedChart, setSelectedChart] = useState("chartSR");
 
   useEffect(() => {
@@ -145,10 +145,10 @@ export function CardDefault({ srData, srKey }) {
         <CardBody>
           <Tabs value={activeTab} onChange={setActiveTab}>
             <TabsHeader>
+              <Tab value="data">Data</Tab>
               <Tab value="chartSR">Irradiance</Tab>
               <Tab value="chartPower">Power</Tab>
               <Tab value="voltage">Voltage</Tab>
-              <Tab value="data">Data</Tab>
             </TabsHeader>
             <TabsBody>
               <TabPanel className="w-full" value="chartSR">

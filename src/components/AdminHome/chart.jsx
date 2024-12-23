@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
     CategoryScale,
@@ -12,7 +12,6 @@ import {
 import Chart from "chart.js/auto";
 import zoomPlugin from "chartjs-plugin-zoom";
 
-// Registrasi plugin zoom
 Chart.register(
     CategoryScale,
     LinearScale,
@@ -25,41 +24,43 @@ Chart.register(
 );
 
 export function ChartSR({ readings }) {
-    const [selectedDate, setSelectedDate] = useState("");
+    const [startTimestamp, setStartTimestamp] = useState("");
+    const [endTimestamp, setEndTimestamp] = useState("");
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
     }
 
-    // Filter readings berdasarkan tanggal yang dipilih
-    const filteredReadings = selectedDate
-        ? Object.keys(readings).filter((key) => {
-              const readingDate = new Date(readings[key].timestamp * 1000).toISOString().split("T")[0];
-              return readingDate === selectedDate;
-          })
-        : Object.keys(readings);
-
-    // Ambil data Irradiance dan timestamp
-    let readingData = filteredReadings.map((key) => {
+    let readingData = Object.keys(readings).map((key) => {
         const reading = readings[key];
         return {
             timestamp: reading.timestamp,
             irradiance: reading.Irradiance,
         };
+    }).sort((a, b) => a.timestamp - b.timestamp);
+
+    const latestTimestamp = readingData[readingData.length - 1]?.timestamp || 0;
+    const oneDayBefore = latestTimestamp - 1 * 24 * 60 * 60;
+
+    useEffect(() => {
+        if (!startTimestamp) {
+            setStartTimestamp(oneDayBefore.toString());
+        }
+        setEndTimestamp(latestTimestamp.toString());
+    }, [latestTimestamp, startTimestamp]);
+
+    const filteredData = readingData.filter((data) => {
+        const timestamp = data.timestamp;
+        const start = startTimestamp ? parseInt(startTimestamp) : oneDayBefore;
+        const end = endTimestamp ? parseInt(endTimestamp) : latestTimestamp;
+        return timestamp >= start && timestamp <= end;
     });
 
-    // Urutkan berdasarkan timestamp
-    readingData = readingData.sort((a, b) => a.timestamp - b.timestamp);
-
-    // Ambil label dan dataset
-    const labels = readingData.map((data) => {
+    const labels = filteredData.map((data) => {
         const date = new Date(data.timestamp * 1000);
         return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
-    const irradianceData = readingData.map((data) => data.irradiance);
-
-    // Tentukan batas awal (7 data terbaru)
-    const initialRangeStart = labels.length > 20 ? labels.length - 20 : 0;
+    const irradianceData = filteredData.map((data) => data.irradiance);
 
     const chartData = {
         labels: labels,
@@ -83,11 +84,10 @@ export function ChartSR({ readings }) {
                 callbacks: {
                     label: function (context) {
                         const index = context.dataIndex;
-                        const timestamp = readingData[index].timestamp;
+                        const timestamp = filteredData[index].timestamp;
                         const fullDate = new Date(timestamp * 1000);
                         const formattedDate = fullDate.toLocaleDateString();
                         const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
                         return `Irradiance: ${context.raw}, \nDate: ${formattedDate}, Time: ${formattedTime}`;
                     },
                 },
@@ -111,8 +111,6 @@ export function ChartSR({ readings }) {
                 ticks: {
                     autoSkip: true,
                 },
-                min: initialRangeStart,
-                max: labels.length - 1, // Tampilkan hanya 7 data terbaru secara default
             },
         },
     };
@@ -121,33 +119,55 @@ export function ChartSR({ readings }) {
         <div
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-4 rounded-lg shadow-lg"
             style={{
-                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)",
             }}
         >
             <h1 className="text-center text-2xl font-bold mb-2 tracking-wider">
                 Irradiance Chart
             </h1>
 
-            <div className="mb-2">
-                <input
-                    type="date"
-                    id="dateFilter"
-                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                />
+            <div className="mb-2 grid grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="startTimestamp">Start Timestamp:</label>
+                    <select
+                        id="startTimestamp"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={startTimestamp}
+                        onChange={(e) => setStartTimestamp(e.target.value)}
+                    >
+                        <option value={oneDayBefore}>{new Date(oneDayBefore * 1000).toLocaleString()}</option>
+                        {readingData.map((data) => (
+                            <option key={data.timestamp} value={data.timestamp}>
+                                {new Date(data.timestamp * 1000).toLocaleString()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label htmlFor="endTimestamp">End Timestamp:</label>
+                    <select
+                        id="endTimestamp"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={endTimestamp}
+                        onChange={(e) => setEndTimestamp(e.target.value)}
+                    >
+                        {readingData.map((data) => (
+                            <option key={data.timestamp} value={data.timestamp}>
+                                {new Date(data.timestamp * 1000).toLocaleString()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-    {/* Chart */}
-    <div
-        className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
-        style={{
-            border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
-        }}
-    >
-        <Line data={chartData} options={chartOptions} />
-    </div>
-</div>
-
+            <div
+                className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
+                style={{
+                    border: "1px solid rgba(0, 0, 0, 0.1)",
+                }}
+            >
+                <Line data={chartData} options={chartOptions} />
+            </div>
+        </div>
     );
 }

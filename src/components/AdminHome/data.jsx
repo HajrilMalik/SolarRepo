@@ -3,7 +3,7 @@ import { Progress } from "@material-tailwind/react";
 
 // Fungsi untuk memeriksa apakah SR masih aktif
 export const isActive = (readings) => {
-  const threshold = 86400; // Threshold dalam detik (1 hari)
+  const threshold = 1800; // Threshold dalam detik (30 menit)
   const now = Math.floor(Date.now() / 1000); // Waktu saat ini dalam detik
   const timestampKeys = Object.keys(readings);
   const latestTimestamp = Math.max(...timestampKeys.map((key) => parseInt(key))); // Timestamp terbaru

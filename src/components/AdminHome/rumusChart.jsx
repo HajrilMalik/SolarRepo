@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
     CategoryScale,
@@ -12,7 +12,7 @@ import {
 import Chart from "chart.js/auto";
 import zoomPlugin from "chartjs-plugin-zoom";
 
-// Registrasi plugin zoom
+// Register zoom plugin
 Chart.register(
     CategoryScale,
     LinearScale,
@@ -25,66 +25,78 @@ Chart.register(
 );
 
 export function ChartRumus({ readings }) {
-    const [selectedDate, setSelectedDate] = useState("");
-    const [panelDimensions, setPanelDimensions] = useState(0.00052); // Dimensi panel default 1 m²
-    const [efficiency, setEfficiency] = useState(80); // Efisiensi default 0%
+    const [startTimestamp, setStartTimestamp] = useState(0);
+    const [endTimestamp, setEndTimestamp] = useState(0);
+    const [panelDimensions, setPanelDimensions] = useState(0.00052); // Default panel dimension 1 m²
+    const [efficiency, setEfficiency] = useState(80); // Default efficiency 80%
+    const [timestamps, setTimestamps] = useState([]); // Array untuk menyimpan semua timestamp
+
+    useEffect(() => {
+        if (readings && Object.keys(readings).length > 0) {
+            const allTimestamps = Object.keys(readings).map(key => readings[key].timestamp);
+            const readingData = allTimestamps.map(ts => ({
+                timestamp: ts,
+                reading: readings[ts]
+            })).sort((a, b) => a.timestamp - b.timestamp);
+    
+            const latestTimestamp = readingData[readingData.length - 1]?.timestamp || 0;
+            const oneDayBefore = latestTimestamp - (1 * 24 * 60 * 60);
+    
+            // Filter timestamps untuk 1 hari terakhir
+            const filteredTimestamps = allTimestamps.filter(ts => ts >= oneDayBefore);
+            
+            setTimestamps(filteredTimestamps);  // Hanya set timestamps dari 1 hari terakhir
+            setEndTimestamp(latestTimestamp);
+            setStartTimestamp(oneDayBefore);
+        }
+    }, [readings]);
+    
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
     }
 
-    // Filter readings berdasarkan tanggal yang dipilih
-    const filteredReadings = selectedDate
-        ? Object.keys(readings).filter((key) => {
-              const readingDate = new Date(readings[key].timestamp * 1000).toISOString().split("T")[0];
-              return readingDate === selectedDate;
-          })
-        : Object.keys(readings);
+    // Filter readings based on selected start and end timestamps
+    const filteredReadings = Object.keys(readings).filter((key) => {
+        const readingTimestamp = readings[key].timestamp;
+        return readingTimestamp >= startTimestamp && readingTimestamp <= endTimestamp;
+    });
 
-    // Ambil data Irradiance dan timestamp
+    // Extract data for Irradiance and timestamp
     let readingData = filteredReadings.map((key) => {
         const reading = readings[key];
-        // Jika Volt dan Current null, diisi dengan 0
         const volt = reading.Volt || {};
         const current = reading.Current || {};
 
-        // Hitung Pmax (power maksimum) dengan mencari nilai maksimal dari hasil perkalian Volt dan Current
         let pmax = 0;
         Object.keys(volt).forEach((index) => {
             const v = volt[index] || 0;
             const c = current[index] || 0;
-            const power = v * c; // Pmax = Volt * Current
-            console.log(`Index: ${index}, Volt: ${v}, Current: ${c}, Power: ${power}`); // Cek nilai volt, current, dan power
+            const power = v * c;
             if (power > pmax) {
-                pmax = power; // Ambil nilai maksimal Pmax
+                pmax = power;
             }
         });
-        console.log("Pmax calculated:", pmax);
-        
 
-        // Hitung Irradiance menggunakan rumus yang telah diperbaiki
-        const irradiance = pmax / (1000 * panelDimensions * (efficiency / 100)); // Efisiensi dalam desimal
+        const irradiance = pmax / (1000 * panelDimensions * (efficiency / 100));
 
         return {
             timestamp: reading.timestamp,
             irradiance: irradiance,
-            pmax: pmax, // Tambahkan Pmax pada data untuk tooltip
+            pmax: pmax,
         };
     });
 
-    // Urutkan berdasarkan timestamp
+    // Sort by timestamp
     readingData = readingData.sort((a, b) => a.timestamp - b.timestamp);
 
-    // Ambil label dan dataset
+    // Prepare labels and datasets
     const labels = readingData.map((data) => {
         const date = new Date(data.timestamp * 1000);
         return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
     const irradianceData = readingData.map((data) => data.irradiance);
-    const pmaxData = readingData.map((data) => data.pmax); // Ambil data Pmax
-
-    // Tentukan batas awal (7 data terbaru)
-    const initialRangeStart = labels.length > 20 ? labels.length - 20 : 0;
+    const pmaxData = readingData.map((data) => data.pmax);
 
     const chartData = {
         labels: labels,
@@ -96,10 +108,9 @@ export function ChartRumus({ readings }) {
                 backgroundColor: "rgba(66, 165, 245, 0.2)",
                 tension: 0.4,
                 fill: true,
-                // Tambahkan data Pmax di titik tertentu untuk label atau tooltip
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: "rgba(255, 99, 132, 1)", // Warna titik saat hover
+                pointBackgroundColor: "rgba(255, 99, 132, 1)",
             },
         ],
     };
@@ -114,13 +125,10 @@ export function ChartRumus({ readings }) {
                         const index = context.dataIndex;
                         const timestamp = readingData[index].timestamp;
                         const fullDate = new Date(timestamp * 1000);
-                        const formattedDate = fullDate.toLocaleDateString();
-                        const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-                        // Tampilkan informasi Pmax di tooltip
+                                                const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                         const irradiance = context.raw;
-                        const pmax = pmaxData[index]; // Ambil Pmax dari data
-                        return `Irradiance: ${irradiance} W/m²\nPmax: ${pmax} W\nDate: ${formattedDate}, Time: ${formattedTime}`;
+                        const pmax = pmaxData[index];
+                        return `Irradiance: ${irradiance} W/m²\nPmax: ${pmax} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
                     },
                 },
             },
@@ -143,8 +151,6 @@ export function ChartRumus({ readings }) {
                 ticks: {
                     autoSkip: true,
                 },
-                min: initialRangeStart,
-                max: labels.length - 1, // Tampilkan hanya 7 data terbaru secara default
             },
         },
     };
@@ -160,15 +166,42 @@ export function ChartRumus({ readings }) {
                 Irradiance Chart
             </h1>
 
-            {/* Input untuk memilih tanggal */}
+            {/* Dropdown untuk memilih start timestamp */}
             <div className="mb-2">
-                <input
-                    type="date"
-                    id="dateFilter"
+                <label htmlFor="startTimestamp" className="text-sm font-medium text-gray-700">
+                    Start Timestamp:
+                </label>
+                <select
+                    id="startTimestamp"
                     className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                />
+                    value={startTimestamp}
+                    onChange={(e) => setStartTimestamp(parseInt(e.target.value))}
+                >
+                    {timestamps.map((timestamp) => (
+                        <option key={timestamp} value={timestamp}>
+                            {new Date(timestamp * 1000).toLocaleString()}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Dropdown untuk memilih end timestamp */}
+            <div className="mb-2">
+                <label htmlFor="endTimestamp" className="text-sm font-medium text-gray-700">
+                    End Timestamp:
+                </label>
+                <select
+                    id="endTimestamp"
+                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    value={endTimestamp}
+                    onChange={(e) => setEndTimestamp(parseInt(e.target.value))}
+                >
+                    {timestamps.map((timestamp) => (
+                        <option key={timestamp} value={timestamp}>
+                            {new Date(timestamp * 1000).toLocaleString()}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {/* Input untuk memilih dimensi panel PV */}
@@ -204,7 +237,7 @@ export function ChartRumus({ readings }) {
                 />
             </div>
 
-            {/* Grafik */}
+            {/* Chart area */}
             <div
                 className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
                 style={{
