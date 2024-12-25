@@ -30,10 +30,17 @@ export function ChartRumus({ readings }) {
     const [panelDimensions, setPanelDimensions] = useState(0.00052); // Default panel dimension 1 m²
     const [efficiency, setEfficiency] = useState(80); // Default efficiency 80%
     const [timestamps, setTimestamps] = useState([]); // Array untuk menyimpan semua timestamp
+    const [allTimestamps, setAllTimestamps] = useState([]);
+
+    // States for manually selecting start and end date
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
 
     useEffect(() => {
         if (readings && Object.keys(readings).length > 0) {
             const allTimestamps = Object.keys(readings).map(key => readings[key].timestamp);
+            setAllTimestamps(allTimestamps);  // Simpan semua timestamp
+    
             const readingData = allTimestamps.map(ts => ({
                 timestamp: ts,
                 reading: readings[ts]
@@ -42,21 +49,49 @@ export function ChartRumus({ readings }) {
             const latestTimestamp = readingData[readingData.length - 1]?.timestamp || 0;
             const oneDayBefore = latestTimestamp - (1 * 24 * 60 * 60);
     
-            // Filter timestamps untuk 1 hari terakhir
-            const filteredTimestamps = allTimestamps.filter(ts => ts >= oneDayBefore);
-            
-            setTimestamps(filteredTimestamps);  // Hanya set timestamps dari 1 hari terakhir
+            setTimestamps(allTimestamps);  // Tetap simpan semua timestamp di dropdown
             setEndTimestamp(latestTimestamp);
-            setStartTimestamp(oneDayBefore);
+    
+            // Temukan timestamp terdekat 1 hari sebelum
+            const nearestStartTimestamp = allTimestamps.find(ts => ts >= oneDayBefore) || allTimestamps[0];
+            setStartTimestamp(nearestStartTimestamp);
         }
     }, [readings]);
-    
+
+    const handleStartDateChange = (e) => {
+        setStartDate(e.target.value);
+        if (e.target.value) {
+            const startDateTimestamp = new Date(e.target.value).getTime() / 1000;
+            setStartTimestamp(startDateTimestamp);
+        }
+    };
+
+    const handleEndDateChange = (e) => {
+        setEndDate(e.target.value);
+        if (e.target.value) {
+            const endDateTimestamp = new Date(e.target.value).getTime() / 1000;
+            setEndTimestamp(endDateTimestamp);
+        }
+    };
+
+    const handlePanelDimensionsChange = (e) => {
+        setPanelDimensions(parseFloat(e.target.value));
+    };
+
+    const handleEfficiencyChange = (e) => {
+        setEfficiency(parseFloat(e.target.value));
+    };
+
+    // Filter timestamps berdasarkan startDate dan endDate
+    const filteredTimestamps = allTimestamps.filter((timestamp) => {
+        return timestamp >= startTimestamp && timestamp <= endTimestamp;
+    });
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
     }
 
-    // Filter readings based on selected start and end timestamps
+    // Filter readings berdasarkan selected timestamps
     const filteredReadings = Object.keys(readings).filter((key) => {
         const readingTimestamp = readings[key].timestamp;
         return readingTimestamp >= startTimestamp && readingTimestamp <= endTimestamp;
@@ -78,6 +113,7 @@ export function ChartRumus({ readings }) {
             }
         });
 
+        // Perhitungan irradiance
         const irradiance = pmax / (1000 * panelDimensions * (efficiency / 100));
 
         return {
@@ -125,7 +161,7 @@ export function ChartRumus({ readings }) {
                         const index = context.dataIndex;
                         const timestamp = readingData[index].timestamp;
                         const fullDate = new Date(timestamp * 1000);
-                                                const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                        const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
                         const irradiance = context.raw;
                         const pmax = pmaxData[index];
                         return `Irradiance: ${irradiance} W/m²\nPmax: ${pmax} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
@@ -166,75 +202,111 @@ export function ChartRumus({ readings }) {
                 Irradiance Chart
             </h1>
 
-            {/* Dropdown untuk memilih start timestamp */}
-            <div className="mb-2">
-                <label htmlFor="startTimestamp" className="text-sm font-medium text-gray-700">
-                    Start Timestamp:
-                </label>
-                <select
-                    id="startTimestamp"
-                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={startTimestamp}
-                    onChange={(e) => setStartTimestamp(parseInt(e.target.value))}
-                >
-                    {timestamps.map((timestamp) => (
-                        <option key={timestamp} value={timestamp}>
-                            {new Date(timestamp * 1000).toLocaleString()}
-                        </option>
-                    ))}
-                </select>
+            {/* Flexbox untuk menata form input */}
+            <div className="flex justify-between gap-4 mb-4">
+                {/* Input untuk memilih start tanggal */}
+                <div className="w-1/2">
+                    <label htmlFor="startDate" className="text-sm font-medium text-gray-700">
+                        Start Date and Time:
+                    </label>
+                    <input
+                        type="datetime-local"
+                        id="startDate"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={startDate}
+                        onChange={handleStartDateChange}
+                    />
+                </div>
+
+                {/* Input untuk memilih end tanggal */}
+                <div className="w-1/2">
+                    <label htmlFor="endDate" className="text-sm font-medium text-gray-700">
+                        End Date and Time:
+                    </label>
+                    <input
+                        type="datetime-local"
+                        id="endDate"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={endDate}
+                        onChange={handleEndDateChange}
+                    />
+                </div>
             </div>
 
-            {/* Dropdown untuk memilih end timestamp */}
-            <div className="mb-2">
-                <label htmlFor="endTimestamp" className="text-sm font-medium text-gray-700">
-                    End Timestamp:
-                </label>
-                <select
-                    id="endTimestamp"
-                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={endTimestamp}
-                    onChange={(e) => setEndTimestamp(parseInt(e.target.value))}
-                >
-                    {timestamps.map((timestamp) => (
-                        <option key={timestamp} value={timestamp}>
-                            {new Date(timestamp * 1000).toLocaleString()}
-                        </option>
-                    ))}
-                </select>
+            {/* Flexbox untuk select timestamp start dan end */}
+            <div className="flex justify-between gap-4 mb-4">
+                {/* Select untuk memilih start timestamp */}
+                <div className="w-1/2">
+                    <label htmlFor="startTimestamp" className="text-sm font-medium text-gray-700">
+                        Select Start Timestamp:
+                    </label>
+                    <select
+                        id="startTimestamp"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={startTimestamp}
+                        onChange={(e) => setStartTimestamp(Number(e.target.value))}
+                    >
+                        {filteredTimestamps.map((timestamp) => (
+                            <option key={timestamp} value={timestamp}>
+                                {new Date(timestamp * 1000).toLocaleString()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Select untuk memilih end timestamp */}
+                <div className="w-1/2">
+                    <label htmlFor="endTimestamp" className="text-sm font-medium text-gray-700">
+                        Select End Timestamp:
+                    </label>
+                    <select
+                        id="endTimestamp"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={endTimestamp}
+                        onChange={(e) => setEndTimestamp(Number(e.target.value))}
+                    >
+                        {filteredTimestamps.map((timestamp) => (
+                            <option key={timestamp} value={timestamp}>
+                                {new Date(timestamp * 1000).toLocaleString()}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            {/* Input untuk memilih dimensi panel PV */}
-            <div className="mb-2">
-                <label htmlFor="panelDimensions" className="text-sm font-medium text-gray-700">
-                    Panel Dimensions (m²):
-                </label>
-                <input
-                    type="number"
-                    id="panelDimensions"
-                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={panelDimensions}
-                    onChange={(e) => setPanelDimensions(parseFloat(e.target.value))}
-                    min="0.1"
-                    step="0.1"
-                />
-            </div>
+            {/* Dropdown untuk panel dimensions dan efficiency */}
+            <div className="flex justify-between gap-4 mb-4">
+                {/* Input untuk panel dimensions */}
+                <div className="w-1/2">
+                    <label htmlFor="panelDimensions" className="text-sm font-medium text-gray-700">
+                        Panel Dimension (m²):
+                    </label>
+                    <input
+                        type="number"
+                        id="panelDimensions"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={panelDimensions}
+                        onChange={handlePanelDimensionsChange}
+                        step="0.00001"
+                    />
+                </div>
 
-            {/* Input untuk memilih efisiensi panel PV */}
-            <div className="mb-2">
-                <label htmlFor="efficiency" className="text-sm font-medium text-gray-700">
-                    Efficiency (%):
-                </label>
-                <input
-                    type="number"
-                    id="efficiency"
-                    className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    value={efficiency}
-                    onChange={(e) => setEfficiency(parseFloat(e.target.value))}
-                    min="0"
-                    max="100"
-                    step="1"
-                />
+                {/* Input untuk efficiency */}
+                <div className="w-1/2">
+                    <label htmlFor="efficiency" className="text-sm font-medium text-gray-700">
+                        Efficiency (%):
+                    </label>
+                    <input
+                        type="number"
+                        id="efficiency"
+                        className="border rounded px-2 py-1 w-full text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        value={efficiency}
+                        onChange={handleEfficiencyChange}
+                        min="1"
+                        max="100"
+                        step="1"
+                    />
+                </div>
             </div>
 
             {/* Chart area */}

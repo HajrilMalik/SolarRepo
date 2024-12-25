@@ -112,7 +112,7 @@ export function HomeUser () {
       
                 const lastReadingTime = sr.readings ? Math.max(...Object.keys(sr.readings)) : 0;
                 const currentTime = Date.now() / 1000; // Current time in seconds
-                const oneDayInSeconds = 86400; // 24 hours in seconds
+                const oneDayInSeconds = 1800; 
                 
                 const isActive = currentTime - lastReadingTime <= oneDayInSeconds;
 
