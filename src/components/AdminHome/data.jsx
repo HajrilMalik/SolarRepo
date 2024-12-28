@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Progress } from "@material-tailwind/react";
-
+import { Progress,Typography } from "@material-tailwind/react";
 // Fungsi untuk memeriksa apakah SR masih aktif
 export const isActive = (readings) => {
   const threshold = 1800; // Threshold dalam detik (30 menit)
@@ -12,9 +11,7 @@ export const isActive = (readings) => {
   return timeDiff <= threshold; // Jika perbedaan waktu lebih kecil atau sama dengan threshold, berarti aktif
 };
 
-
-
-export function Data({ readings }) {
+export function Data({ readings, srKey }) {  // Add srKey prop here
   const srStatus = isActive(readings) ? "Aktif" : "Tidak Aktif";
   // Urutkan timestamp berdasarkan waktu terbaru
   const timestampKeys = Object.keys(readings).sort((a, b) => b - a);
@@ -31,13 +28,14 @@ export function Data({ readings }) {
   if (!currentReading) {
     return <div>No data available for the selected timestamp</div>;
   }
-  
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-lg space-y-4 h-full">
       {/* Title and Timestamp Selector */}
       <div className="mb-2 flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-blue-600">Select Timestamp</h3>
+                  <Typography variant="h5" color="light-blue" className="mb-2">
+                    {srKey}
+                  </Typography>
         <select
           id="timestampSelect"
           value={selectedTimestamp}
@@ -58,6 +56,8 @@ export function Data({ readings }) {
           {srStatus}
         </span>
       </div>
+
+
 
       {/* Data Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">

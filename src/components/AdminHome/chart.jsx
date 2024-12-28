@@ -27,17 +27,19 @@ Chart.register(
 export function ChartSR({ readings }) {
     const [startTimestamp, setStartTimestamp] = useState(0);
     const [endTimestamp, setEndTimestamp] = useState(0);
-    const [timestamps, setTimestamps] = useState([]); // Array untuk menyimpan semua timestamp
+    const [timestamps, setTimestamps] = useState([]);
     const [allTimestamps, setAllTimestamps] = useState([]);
-
-    // States for manually selecting start and end date
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+
+    // State untuk checkbox
+    const [showIrradiance, setShowIrradiance] = useState(true);
+    const [showPmax, setShowPmax] = useState(true);
 
     useEffect(() => {
         if (readings && Object.keys(readings).length > 0) {
             const allTimestamps = Object.keys(readings).map(key => readings[key].timestamp);
-            setAllTimestamps(allTimestamps);  // Simpan semua timestamp
+            setAllTimestamps(allTimestamps);
     
             const readingData = allTimestamps.map(ts => ({
                 timestamp: ts,
@@ -47,10 +49,9 @@ export function ChartSR({ readings }) {
             const latestTimestamp = readingData[readingData.length - 1]?.timestamp || 0;
             const oneDayBefore = latestTimestamp - (1 * 24 * 60 * 60);
     
-            setTimestamps(allTimestamps);  // Tetap simpan semua timestamp di dropdown
+            setTimestamps(allTimestamps);
             setEndTimestamp(latestTimestamp);
     
-            // Temukan timestamp terdekat 1 hari sebelum
             const nearestStartTimestamp = allTimestamps.find(ts => ts >= oneDayBefore) || allTimestamps[0];
             setStartTimestamp(nearestStartTimestamp);
         }
@@ -72,7 +73,6 @@ export function ChartSR({ readings }) {
         }
     };
 
-    // Filter timestamps berdasarkan startDate dan endDate
     const filteredTimestamps = allTimestamps.filter((timestamp) => {
         return timestamp >= startTimestamp && timestamp <= endTimestamp;
     });
@@ -81,30 +81,16 @@ export function ChartSR({ readings }) {
         return <div>No data available</div>;
     }
 
-    // Filter readings berdasarkan selected timestamps
     const filteredReadings = Object.keys(readings).filter((key) => {
         const readingTimestamp = readings[key].timestamp;
         return readingTimestamp >= startTimestamp && readingTimestamp <= endTimestamp;
     });
 
-    // Extract data for Irradiance and timestamp directly from Firebase
     let readingData = filteredReadings.map((key) => {
         const reading = readings[key];
-        const volt = reading.Volt || {};
-        const current = reading.Current || {};
 
-        let pmax = 0;
-        Object.keys(volt).forEach((index) => {
-            const v = volt[index] || 0;
-            const c = current[index] || 0;
-            const power = v * c;
-            if (power > pmax) {
-                pmax = power;
-            }
-        });
-
-        // Directly use irradiance if available in the Firebase data
-        const irradiance = reading.Irradiance || pmax / 1000;  // Default to calculated value if not available
+        const irradiance = reading.Irradiance || 0;
+        const pmax = reading.Pmax || 0;
 
         return {
             timestamp: reading.timestamp,
@@ -113,91 +99,148 @@ export function ChartSR({ readings }) {
         };
     });
 
-    // Sort by timestamp
     readingData = readingData.sort((a, b) => a.timestamp - b.timestamp);
 
-    // Prepare labels and datasets
     const labels = readingData.map((data) => {
         const date = new Date(data.timestamp * 1000);
         return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
+
     const irradianceData = readingData.map((data) => data.irradiance);
     const pmaxData = readingData.map((data) => data.pmax);
 
-    const chartData = {
-        labels: labels,
-        datasets: [
-            {
-                label: "Irradiance",
-                data: irradianceData,
-                borderColor: "rgba(66, 165, 245, 1)",
-                backgroundColor: "rgba(66, 165, 245, 0.2)",
-                tension: 0.4,
-                fill: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: "rgba(255, 99, 132, 1)",
-            },
-        ],
-    };
+const chartData = {
+    labels: labels,
+    datasets: [
+        showIrradiance && {
+            label: "Irradiance (W/m²)",
+            data: irradianceData,
+            borderColor: "rgba(66, 165, 245, 1)",
+            backgroundColor: "rgba(66, 165, 245, 0.2)",
+            yAxisID: showPmax && showIrradiance ? 'y1' : 'y1', // Tetap di sumbu kiri jika satu grafik
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "rgba(255, 99, 132, 1)",
+        },
+        showPmax && {
+            label: "Pmax (W)",
+            data: pmaxData,
+            borderColor: "rgba(255, 159, 64, 1)",
+            backgroundColor: "rgba(255, 159, 64, 0.2)",
+            yAxisID: showPmax && showIrradiance ? 'y2' : 'y1',  // Pindah ke y1 jika hanya satu grafik
+            tension: 0.4,
+            fill: true,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "rgba(255, 159, 64, 1)",
+        },
+    ].filter(Boolean),
+};
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            tooltip: {
-                callbacks: {
-                    label: function (context) {
-                        const index = context.dataIndex;
-                        const timestamp = readingData[index].timestamp;
-                        const fullDate = new Date(timestamp * 1000);
-                        const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                        const irradiance = context.raw;
-                        const pmax = pmaxData[index];
-                        return `Irradiance: ${irradiance} W/m²\nPmax: ${pmax} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
-                    },
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        tooltip: {
+            callbacks: {
+                label: function (context) {
+                    const index = context.dataIndex;
+                    const timestamp = readingData[index].timestamp;
+                    const fullDate = new Date(timestamp * 1000);
+                    const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    const value = context.raw;
+                    const label = context.dataset.label;
+                    return `${label}: ${value} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
                 },
+            },
+        },
+        zoom: {
+            pan: {
+                enabled: true,
+                mode: "x",
             },
             zoom: {
-                pan: {
+                enabled: true,
+                mode: "x",
+                wheel: {
                     enabled: true,
-                    mode: "x",
-                },
-                zoom: {
-                    enabled: true,
-                    mode: "x",
-                    wheel: {
-                        enabled: true,
-                    },
                 },
             },
         },
-        scales: {
-            x: {
-                ticks: {
-                    autoSkip: true,
-                },
+    },
+    scales: {
+        x: {
+            ticks: {
+                autoSkip: true,
             },
         },
-    };
+        y1: {
+            type: 'linear',
+            position: 'left',
+            title: {
+                display: true,
+                text: showIrradiance ? 'Irradiance (W/m²)' : 'Pmax (W)',
+            },
+            min: showIrradiance ? Math.min(...irradianceData) - 15 : Math.min(...pmaxData) - 15,
+        },
+        y2: showIrradiance && showPmax ? {
+            type: 'linear',
+            position: 'right',
+            title: {
+                display: true,
+                text: 'Pmax (W)',
+            },
+        } : undefined,  // Hilangkan y2 jika hanya satu grafik
+    },
+};
+
+    
+    
 
     return (
         <div
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-4 rounded-lg shadow-lg"
             style={{
-                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)",
             }}
         >
-            <h1 className="text-center text-2xl font-bold mb-2 tracking-wider">
-                Irradiance Chart
-            </h1>
+            {/* Checkbox untuk memilih data yang akan ditampilkan */}
+            <div className="flex gap-4 mb-4">
+    <div className="w-1/2">
+        <label htmlFor="showIrradiance" className="text-sm font-medium text-gray-700">
+            Show Irradiance
+        </label>
+        <input
+            type="checkbox"
+            id="showIrradiance"
+            checked={showIrradiance}
+            onChange={(e) => setShowIrradiance(e.target.checked)}
+            className="ml-2"
+        />
+    </div>
 
-            {/* Flexbox untuk menata form input */}
+    <div className="w-1/2">
+        <label htmlFor="showPmax" className="text-sm font-medium text-gray-700">
+            Show Pmax
+        </label>
+        <input
+            type="checkbox"
+            id="showPmax"
+            checked={showPmax}
+            onChange={(e) => setShowPmax(e.target.checked)}
+            className="ml-2"
+        />
+    </div>
+</div>
+
+
+            {/* Input untuk memilih start dan end date */}
             <div className="flex justify-between gap-4 mb-4">
-                {/* Input untuk memilih start tanggal */}
                 <div className="w-1/2">
                     <label htmlFor="startDate" className="text-sm font-medium text-gray-700">
-                        Start Date and Time:
+                        Start Date
                     </label>
                     <input
                         type="datetime-local"
@@ -208,10 +251,9 @@ export function ChartSR({ readings }) {
                     />
                 </div>
 
-                {/* Input untuk memilih end tanggal */}
                 <div className="w-1/2">
                     <label htmlFor="endDate" className="text-sm font-medium text-gray-700">
-                        End Date and Time:
+                        End Date
                     </label>
                     <input
                         type="datetime-local"
@@ -223,9 +265,8 @@ export function ChartSR({ readings }) {
                 </div>
             </div>
 
-            {/* Flexbox untuk select timestamp start dan end */}
+            {/* Timestamp selector */}
             <div className="flex justify-between gap-4 mb-4">
-                {/* Select untuk memilih start timestamp */}
                 <div className="w-1/2">
                     <label htmlFor="startTimestamp" className="text-sm font-medium text-gray-700">
                         Select Start Timestamp:
@@ -244,7 +285,6 @@ export function ChartSR({ readings }) {
                     </select>
                 </div>
 
-                {/* Select untuk memilih end timestamp */}
                 <div className="w-1/2">
                     <label htmlFor="endTimestamp" className="text-sm font-medium text-gray-700">
                         Select End Timestamp:
@@ -264,13 +304,7 @@ export function ChartSR({ readings }) {
                 </div>
             </div>
 
-            {/* Chart area */}
-            <div
-                className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
-                style={{
-                    border: "1px solid rgba(0, 0, 0, 0.1)", // Border ringan untuk chart area
-                }}
-            >
+            <div className="w-full h-96 rounded-lg bg-white p-4 shadow-md">
                 <Line data={chartData} options={chartOptions} />
             </div>
         </div>

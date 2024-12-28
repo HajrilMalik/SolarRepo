@@ -7,15 +7,14 @@ Chart.register(zoomPlugin);
 
 export function ChartVoltagePower({ readings }) {
     const [selectedTimestamp, setSelectedTimestamp] = useState("");
+    const [showCurrent, setShowCurrent] = useState(true);
+    const [showPower, setShowPower] = useState(true);
 
     if (!readings || Object.keys(readings).length === 0) {
         return <div>No data available</div>;
     }
 
-    // Dapatkan semua timestamp yang ada
     const timestamps = Object.keys(readings).sort((a, b) => b - a);
-
-    // Pilih timestamp terbaru jika belum dipilih
     const activeTimestamp = selectedTimestamp || timestamps[0];
     const activeData = readings[activeTimestamp];
 
@@ -23,32 +22,60 @@ export function ChartVoltagePower({ readings }) {
         return <div>Invalid data for the selected timestamp</div>;
     }
 
-    // Ambil data Volt dan Current, isi nilai null dengan 0
     const voltData = Object.values(activeData.Volt || {}).map((v) => v || 0);
     const currentData = Object.values(activeData.Current || {}).map((c) => c || 0);
-
-    // Hitung data Power (Volt * Current)
     const powerData = voltData.map((v, i) => v * currentData[i]);
 
-    // Gabungkan Volt dan Power menjadi pasangan {x, y}, lalu urutkan berdasarkan Volt (x)
     const sortedData = voltData
-        .map((v, i) => ({ x: v, y: powerData[i] }))
+        .map((v, i) => ({ x: v, y: currentData[i], power: powerData[i] }))
         .sort((a, b) => a.x - b.x);
 
-    // Siapkan data untuk grafik dari data yang sudah diurutkan
-    const chartDataPower = {
-        labels: sortedData.map((point) => point.x), // Sumbu x setelah diurutkan
+    const chartData = {
+        labels: sortedData.map((point) => point.x),
         datasets: [
-            {
-                label: "Power vs Volt",
-                data: sortedData, // Data sudah dalam format {x, y}
+            showCurrent && {
+                label: "Current",
+                data: sortedData.map((point) => point.y),
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                tension: 0.4,
+                fill: false,
+                yAxisID: 'yCurrent',
+            },
+            showPower && {
+                label: "Power",
+                data: sortedData.map((point) => point.power),
                 borderColor: "rgba(255, 99, 132, 1)",
                 backgroundColor: "rgba(255, 99, 132, 0.2)",
                 tension: 0.4,
                 fill: false,
+                yAxisID: 'yPower',
             },
-        ],
+        ].filter(Boolean),
     };
+
+    const yAxisScales = {};
+
+    if (showCurrent) {
+        yAxisScales.yCurrent = {
+            title: {
+                display: true,
+                text: "Current (A)",
+            },
+            position: "left",
+            ticks: { beginAtZero: true },
+        };
+    }
+    if (showPower) {
+        yAxisScales.yPower = {
+            title: {
+                display: true,
+                text: "Power (W)",
+            },
+            position: "right",
+            ticks: { beginAtZero: true },
+        };
+    }
 
     const chartOptions = {
         responsive: true,
@@ -57,34 +84,28 @@ export function ChartVoltagePower({ readings }) {
             x: {
                 title: {
                     display: true,
-                    text: "Volt",
+                    text: "Voltage (V)",
                 },
-                type: "linear", // Pastikan skala X bersifat linear
+                type: "linear",
                 ticks: {
-                    stepSize: 0.2, // Interval sumbu X
-                    callback: (value) => value.toFixed(1), // Format label menjadi 1 desimal
+                    stepSize: 0.2,
+                    callback: (value) => value.toFixed(1),
                 },
-                beginAtZero: true, // Mulai dari 0
+                beginAtZero: true,
             },
-            y: {
-                title: {
-                    display: true,
-                    text: "Current",
-                },
-            },
+            ...yAxisScales,
         },
         plugins: {
             tooltip: {
                 callbacks: {
-                    label: (context) =>
-                        `Volt: ${context.raw.x}, Current: ${context.raw.y}`,
+                    label: (context) => {
+                        const dataPoint = context.dataset.data[context.dataIndex];
+                        return `${context.dataset.label}: ${dataPoint}`;
+                    },
                 },
             },
             zoom: {
-                pan: {
-                    enabled: true,
-                    mode: "x",
-                },
+                pan: { enabled: true, mode: "x" },
                 zoom: {
                     enabled: true,
                     mode: "x",
@@ -94,22 +115,18 @@ export function ChartVoltagePower({ readings }) {
             },
         },
     };
-    
 
     return (
         <div
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-6 rounded-lg shadow-lg"
             style={{
-                background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
+                background: "linear-gradient(135deg, #4A90E2, #50C9C3)",
             }}
         >
-            <h1 className="text-2xl font-bold text-center text-green-600 mb-2">Power vs Volt Chart</h1>
+            <h1 className="text-2xl font-bold text-center text-green-600 mb-2">Current and Power vs Volt Chart</h1>
 
             <div className="mb-2">
-                <label
-                    htmlFor="timestampSelect"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                >
+                <label htmlFor="timestampSelect" className="block text-sm font-medium text-gray-700 mb-1">
                     Select Timestamp:
                 </label>
                 <select
@@ -126,13 +143,33 @@ export function ChartVoltagePower({ readings }) {
                 </select>
             </div>
 
-            <div
-                className="w-full h-96 rounded-lg bg-white p-4 shadow-md"
-                style={{
-                    border: "1px solid rgba(0, 0, 0, 0.1)",
-                }}
-            >
-                <Line data={chartDataPower} options={chartOptions} />
+            <div className="mb-4">
+                <div>
+                    <label className="inline-flex items-center text-sm">
+                        <input
+                            type="checkbox"
+                            checked={showCurrent}
+                            onChange={() => setShowCurrent(!showCurrent)}
+                            className="form-checkbox text-blue-500"
+                        />
+                        <span className="ml-2">Show Current</span>
+                    </label>
+                </div>
+                <div>
+                    <label className="inline-flex items-center text-sm">
+                        <input
+                            type="checkbox"
+                            checked={showPower}
+                            onChange={() => setShowPower(!showPower)}
+                            className="form-checkbox text-blue-500"
+                        />
+                        <span className="ml-2">Show Power</span>
+                    </label>
+                </div>
+            </div>
+
+            <div className="w-full h-96 rounded-lg bg-white p-4 shadow-md" style={{ border: "1px solid rgba(0, 0, 0, 0.1)" }}>
+                <Line data={chartData} options={chartOptions} />
             </div>
         </div>
     );

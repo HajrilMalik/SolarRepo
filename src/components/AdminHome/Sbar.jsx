@@ -12,14 +12,14 @@ import { Data } from "./data"; // Import komponen Data
 import { ChartRumus } from "./rumusChart"; // Pastikan path ke ChartRumus benar
 import { ChartVoltagePower } from "./voltagechart"; // Import komponen ChartVoltagePower
 
-export function TabsDefault({ selectedReadings, selectedMarker }) {
+export function TabsDefault({ selectedReadings, selectedMarker, srKey }) {
   const [chartType, setChartType] = useState("auto"); // State untuk memilih chart type
   
   const data = [
     {
       label: "Data SR",
       value: "dataSR",
-      component: <Data readings={selectedReadings} selectedMarker={selectedMarker} />,
+      component: <Data readings={selectedReadings} srKey={srKey} selectedMarker={selectedMarker} />
     },
     {
       label: "Irradience",

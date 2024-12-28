@@ -4,7 +4,6 @@ import {
   Card,
   CardBody,
   CardFooter,
-  Typography,
   Button,
   Input,
   Dialog,
@@ -176,14 +175,12 @@ export function CardDefault({ srData, srKey }) {
                 <ChartVoltagePower readings={srData.readings} />
               </TabPanel>
               <TabPanel value="data">
-                <Data readings={srData.readings} />
+              <Data readings={srData.readings} srKey={srKey} />
               </TabPanel>
             </TabsBody>
           </Tabs>
-          <Typography variant="h5" color="light-blue" className="mb-2">
-            {srKey} - Total Timestamps: {timestampCount}
-          </Typography>
-          <Typography>Range: {srData.charts?.range || "N/A"}</Typography>
+
+          
         </CardBody>
         <CardFooter className="pt-0">
           <Button color="blue" onClick={toggleModal}>
