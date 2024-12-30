@@ -19,7 +19,6 @@ import {
 import { ref, update } from "firebase/database";
 import { database } from "../../firebase/firebase"; // Firebase config path
 import { ChartSR } from "../AdminHome/chart";
-import { ChartPower } from "./powerchart";
 import { ChartVoltagePower } from "./voltagechart";
 import { ChartRumus } from "./rumusChart";
 import { Data } from "./data";
@@ -146,7 +145,6 @@ export function CardDefault({ srData, srKey }) {
             <TabsHeader>
               <Tab value="data">Data</Tab>
               <Tab value="chartSR">Irradiance</Tab>
-              <Tab value="chartPower">Power</Tab>
               <Tab value="voltage">Voltage</Tab>
             </TabsHeader>
             <TabsBody>
@@ -167,9 +165,6 @@ export function CardDefault({ srData, srKey }) {
                 ) : (
                   <ChartRumus readings={srData.readings} />
                 )}
-              </TabPanel>
-              <TabPanel value="chartPower">
-                <ChartPower readings={srData.readings} />
               </TabPanel>
               <TabPanel value="voltage">
                 <ChartVoltagePower readings={srData.readings} />

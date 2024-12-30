@@ -36,6 +36,29 @@ export function ChartRumus({ readings }) {
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
+        // State untuk checkbox
+        const [showIrradiance, setShowIrradiance] = useState(true);
+        const [showPmax, setShowPmax] = useState(true);
+        const [showImax, setShowImax] = useState(false);  
+        const [showVmax, setShowVmax] = useState(false);
+        const [selectedCharts, setSelectedCharts] = useState([true, true, false, false]);
+
+        const handleCheckboxChange = (setState, chartType) => {
+            if (selectedCharts.filter(Boolean).length >= 2 && !selectedCharts[chartType]) {
+                alert("Anda hanya dapat memilih hingga 2 grafik.");
+                return;
+            }
+        
+            setState((prevState) => {
+                const updatedState = !prevState;
+                const updatedSelectedCharts = [...selectedCharts];
+                updatedSelectedCharts[chartType] = updatedState;
+                setSelectedCharts(updatedSelectedCharts);
+                return updatedState;
+            });
+        };
+
+
     useEffect(() => {
         if (readings && Object.keys(readings).length > 0) {
             const allTimestamps = Object.keys(readings).map(key => readings[key].timestamp);
@@ -97,19 +120,25 @@ export function ChartRumus({ readings }) {
         return readingTimestamp >= startTimestamp && readingTimestamp <= endTimestamp;
     });
 
-    // Extract data for Irradiance and timestamp
+    // Extract data for Irradiance, Pmax, and timestamp
     let readingData = filteredReadings.map((key) => {
         const reading = readings[key];
         const volt = reading.Volt || {};
         const current = reading.Current || {};
 
         let pmax = 0;
+        let imax = 0;
+        let vmax = 0;
         Object.keys(volt).forEach((index) => {
             const v = volt[index] || 0;
             const c = current[index] || 0;
             const power = v * c;
             if (power > pmax) {
                 pmax = power;
+                vmax = v;  // Update Vmax when power is highest
+            }
+            if (c > imax) {
+                imax = c;  // Update Imax when current is highest
             }
         });
 
@@ -120,6 +149,8 @@ export function ChartRumus({ readings }) {
             timestamp: reading.timestamp,
             irradiance: irradiance,
             pmax: pmax,
+            imax: imax,
+            vmax: vmax
         };
     });
 
@@ -133,24 +164,63 @@ export function ChartRumus({ readings }) {
     });
     const irradianceData = readingData.map((data) => data.irradiance);
     const pmaxData = readingData.map((data) => data.pmax);
+    const imaxData = readingData.map((data) => data.imax);
+    const vmaxData = readingData.map((data) => data.vmax);
 
     const chartData = {
         labels: labels,
         datasets: [
-            {
-                label: "Irradiance",
+            showIrradiance && {
+                label: "Irradiance (W/m²)",
                 data: irradianceData,
                 borderColor: "rgba(66, 165, 245, 1)",
                 backgroundColor: "rgba(66, 165, 245, 0.2)",
+                yAxisID: 'y1',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: 0,
                 pointHoverRadius: 6,
                 pointBackgroundColor: "rgba(255, 99, 132, 1)",
             },
-        ],
+            showPmax && {
+                label: "Pmax (W)",
+                data: pmaxData,
+                borderColor: "rgba(255, 159, 64, 1)",
+                backgroundColor: "rgba(255, 159, 64, 0.2)",
+                yAxisID: (showIrradiance  ? 'y2' : 'y1'),
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "rgba(255, 159, 64, 1)",
+            },
+            showImax && {
+                label: "Imax (A)",
+                data: imaxData,
+                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(75, 192, 192, 0.2)",
+                yAxisID: (showIrradiance || showPmax ? 'y2' : 'y1'),
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "rgba(75, 192, 192, 1)",
+            },
+            showVmax && {
+                label: "Vmax (V)",
+                data: vmaxData,
+                borderColor: "rgba(153, 102, 255, 1)",
+                backgroundColor: "rgba(153, 102, 255, 0.2)",
+                yAxisID: (showIrradiance || showPmax || showImax ? 'y2' : 'y1'),
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 6,
+                pointBackgroundColor: "rgba(153, 102, 255, 1)",
+            },
+        ].filter(Boolean),
     };
-
+    
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -162,22 +232,9 @@ export function ChartRumus({ readings }) {
                         const timestamp = readingData[index].timestamp;
                         const fullDate = new Date(timestamp * 1000);
                         const formattedTime = fullDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-                        const irradiance = context.raw;
-                        const pmax = pmaxData[index];
-                        return `Irradiance: ${irradiance} W/m²\nPmax: ${pmax} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
-                    },
-                },
-            },
-            zoom: {
-                pan: {
-                    enabled: true,
-                    mode: "x",
-                },
-                zoom: {
-                    enabled: true,
-                    mode: "x",
-                    wheel: {
-                        enabled: true,
+                        const value = context.raw;
+                        const label = context.dataset.label;
+                        return `${label}: ${value} W\nDate: ${fullDate.toLocaleDateString()}, Time: ${formattedTime}`;
                     },
                 },
             },
@@ -188,19 +245,101 @@ export function ChartRumus({ readings }) {
                     autoSkip: true,
                 },
             },
+            y1: {
+                type: 'linear',
+                position: 'left',
+                title: {
+                    display: showIrradiance || showPmax || showVmax || showImax,
+                    text: showIrradiance ? 'Irradiance (W/m²)' : (showPmax ? 'Pmax (W)' : (showVmax ? 'Vmax (V)' : 'Imax (A)')),
+                },
+                min: 0, // Set titik 0 untuk y1
+                display: showIrradiance || showPmax || showVmax || showImax,
+            },
+            y2: {
+                type: 'linear',
+                position: 'right',
+                title: {
+                    display: showIrradiance || showPmax || showImax || showVmax,
+                    text: showPmax ? 'Power (W)' : (showImax ? 'Current (A)' : (showVmax ? 'Voltage (V)' : '')),
+                },
+                min: 0, // Set titik 0 untuk y2
+                display: showIrradiance && showPmax || showIrradiance && showImax || showPmax && showImax || showIrradiance && showVmax || showPmax && showVmax || showImax && showVmax,
+                ticks: {
+                    // Menyesuaikan rentang untuk y2
+                    beginAtZero: false, // Pastikan angka mulai dari 0
+                    max: Math.max(...vmaxData, ...imaxData, ...pmaxData), // Menyesuaikan rentang data vmax, imax, dan pmax
+                },
+            },
         },
     };
+    
+    
+    
 
     return (
-        <div
+<div
             className="bg-gradient-to-r from-blue-500 to-blue-700 text-white p-4 rounded-lg shadow-lg"
             style={{
                 background: "linear-gradient(135deg, #4A90E2, #50C9C3)", // Gradasi biru
             }}
         >
-            <h1 className="text-center text-2xl font-bold mb-2 tracking-wider">
-                Irradiance Chart
-            </h1>
+
+                        {/* Checkbox untuk memilih data yang akan ditampilkan */}
+                        <div className="flex gap-4 mb-4">
+                <div className="w-1/2">
+                    <label htmlFor="showIrradiance" className="text-sm font-medium text-gray-700">
+                        Show Irradiance
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="showIrradiance"
+                        checked={showIrradiance}
+                        onChange={() => handleCheckboxChange(setShowIrradiance, 0)}
+                        className="ml-2"
+                    />
+                </div>
+
+                <div className="w-1/2">
+                    <label htmlFor="showPmax" className="text-sm font-medium text-gray-700">
+                        Show Pmax
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="showPmax"
+                        checked={showPmax}
+                        onChange={() => handleCheckboxChange(setShowPmax, 1)}
+                        className="ml-2"
+                    />
+                </div>
+            </div>
+
+            <div className="flex gap-4 mb-4">
+                <div className="w-1/2">
+                    <label htmlFor="showImax" className="text-sm font-medium text-gray-700">
+                        Show Imax
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="showImax"
+                        checked={showImax}
+                        onChange={() => handleCheckboxChange(setShowImax, 2)}
+                        className="ml-2"
+                    />
+                </div>
+
+                <div className="w-1/2">
+                    <label htmlFor="showVmax" className="text-sm font-medium text-gray-700">
+                        Show Vmax
+                    </label>
+                    <input
+                        type="checkbox"
+                        id="showVmax"
+                        checked={showVmax}
+                        onChange={() => handleCheckboxChange(setShowVmax, 3)}
+                        className="ml-2"
+                    />
+                </div>
+            </div>  
 
             {/* Flexbox untuk menata form input */}
             <div className="flex justify-between gap-4 mb-4">

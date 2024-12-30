@@ -7,7 +7,6 @@ import {
   TabPanel,
 } from "@material-tailwind/react";
 import { ChartSR } from "../AdminHome/chart"; // Pastikan path ke ChartSR benar
-import { ChartPower } from "./powerchart";   // Pastikan path ke ChartPower benar
 import { Data } from "./data"; // Import komponen Data
 import { ChartRumus } from "./rumusChart"; // Pastikan path ke ChartRumus benar
 import { ChartVoltagePower } from "./voltagechart"; // Import komponen ChartVoltagePower
@@ -41,11 +40,6 @@ export function TabsDefault({ selectedReadings, selectedMarker, srKey }) {
           )}
         </>
       ),
-    },
-    {
-      label: "Power",
-      value: "chartPower",
-      component: <ChartPower readings={selectedReadings} />,
     },
     {
       label: "Volt x Power",
